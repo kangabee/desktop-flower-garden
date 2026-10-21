@@ -9,11 +9,10 @@ import { FLOWER_BY_ID, pickRandomFlower } from '../data/flowers.js';
  * 새 씨앗. legacy = Step 1~2 시절 저장 형식이면 진행도를 이어받는다.
  * gift = 선물받은 씨앗 { flowerId, from, seedId, fromGarden } 이면 그 꽃으로 심는다.
  */
-export function createTimer(legacy, mode = 'workhours', gift = null) {
-  const base = legacy?.mode && typeof legacy.startedAt === 'number' ? legacy : { mode, startedAt: Date.now() };
+export function createTimer(legacy, gift = null) {
+  const base = typeof legacy?.startedAt === 'number' ? legacy : { startedAt: Date.now() };
   const flowerId = gift?.flowerId ?? (FLOWER_BY_ID[base.flowerId] ? base.flowerId : pickRandomFlower().id);
   return {
-    mode: base.mode,
     startedAt: base.startedAt,
     flowerId,
     giftFrom: gift ? gift.from || '' : null, // null = 직접 받은 랜덤 씨앗
@@ -23,7 +22,7 @@ export function createTimer(legacy, mode = 'workhours', gift = null) {
     sunOn: false, // 햇빛 부스터 스위치
     boostSince: null, // 부스터가 실제로 돌기 시작한 시각 (목마르면 멈춤)
     want: null, // 꽃이 지금 원하는 것 { kind, since }
-    nextWantAt: Date.now() + wantIntervalMs(base.mode, false),
+    nextWantAt: Date.now() + wantIntervalMs(false),
     recorded: false,
   };
 }
@@ -37,7 +36,7 @@ function normalize(timer) {
     sunOn: Boolean(sunSince),
     boostSince: sunSince,
     want: rest.want ?? null,
-    nextWantAt: rest.nextWantAt ?? Date.now() + wantIntervalMs(rest.mode, Boolean(sunSince)),
+    nextWantAt: rest.nextWantAt ?? Date.now() + wantIntervalMs(Boolean(sunSince)),
   };
 }
 
@@ -53,11 +52,10 @@ export function useGrowth() {
   const [now, setNow] = useState(Date.now);
 
   useEffect(() => {
-    // 데모 모드만 촘촘하게, 나머지는 느슨하게 갱신해 CPU 사용 최소화
-    const interval = timer.mode === 'demo' ? 250 : 5000;
-    const id = setInterval(() => setNow(Date.now()), interval);
+    // 24시간에 걸쳐 자라므로 5초마다만 다시 계산해도 충분 (CPU 사용 최소화)
+    const id = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(id);
-  }, [timer.mode]);
+  }, []);
 
   const growth = computeGrowth(timer, now);
   const flower = FLOWER_BY_ID[timer.flowerId];
@@ -79,7 +77,6 @@ export function useGrowth() {
           {
             uid: `${cur.startedAt}-${cur.flowerId}`,
             flowerId: cur.flowerId,
-            mode: cur.mode,
             startedAt: cur.startedAt,
             bloomedAt: t,
             care: cur.care,
@@ -100,11 +97,11 @@ export function useGrowth() {
     });
   }, [now, bloomed, timer.want, timer.nextWantAt]);
 
-  /** 새 씨앗: 선물받은 씨앗이 기다리고 있으면 그것부터, 아니면 랜덤 (mode를 넘기면 모드도 변경) */
-  const plantNewSeed = useCallback((mode) => {
+  /** 새 씨앗: 선물받은 씨앗이 기다리고 있으면 그것부터, 아니면 랜덤 */
+  const plantNewSeed = useCallback(() => {
     updateGarden((s) => {
       const [gift, ...rest] = s.seedQueue ?? [];
-      return { timer: createTimer(null, mode ?? s.timer.mode, gift), seedQueue: rest };
+      return { timer: createTimer(null, gift), seedQueue: rest };
     });
     setNow(Date.now());
   }, []);
@@ -154,7 +151,7 @@ export function useGrowth() {
     const plantNow = Boolean(g.timer.recorded);
     updateGarden((s) => ({
       redeemed: [...(s.redeemed ?? []), card.seedId],
-      ...(plantNow ? { timer: createTimer(null, s.timer.mode, gift) } : { seedQueue: [...(s.seedQueue ?? []), gift] }),
+      ...(plantNow ? { timer: createTimer(null, gift) } : { seedQueue: [...(s.seedQueue ?? []), gift] }),
     }));
     setNow(Date.now());
     const who = card.from ? `${card.from}님의 ` : '';

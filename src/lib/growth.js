@@ -1,4 +1,4 @@
-// 성장 계산 모듈 — 순수 함수만 둔다 (UI/저장소와 분리해 Step 2~3에서 재사용).
+// 성장 계산 모듈 — 순수 함수만 둔다 (UI/저장소와 분리).
 
 const HOUR = 60 * 60 * 1000;
 const MINUTE = 60 * 1000;
@@ -6,65 +6,17 @@ const MINUTE = 60 * 1000;
 // 성장 단계: `at` = 해당 단계가 시작되는 진행률(0~1)
 export const PHASES = [
   { id: 0, key: 'seed', label: '씨앗', at: 0 },
-  { id: 1, key: 'sprout', label: '새싹', at: 0.05 }, // 씨앗 단계는 짧게 (근무시간 기준 2시간)
+  { id: 1, key: 'sprout', label: '새싹', at: 0.05 }, // 씨앗 단계는 짧게 (약 1시간)
   { id: 2, key: 'stem', label: '줄기와 잎', at: 0.35 },
   { id: 3, key: 'bud', label: '꽃봉오리', at: 0.7 },
   { id: 4, key: 'bloom', label: '만개', at: 1 },
 ];
 
-// 근무 시간 정의: 월~금 09:00~17:00 → 하루 8시간 × 5일 = 40시간
-export const WORK_SCHEDULE = {
-  days: [1, 2, 3, 4, 5], // Date#getDay(): 0=일 … 6=토
-  startHour: 9,
-  endHour: 17,
-};
+/** 꽃 한 송이가 피기까지: 실제 시간 24시간 (앱을 켜 두든 꺼 두든 흘러간다) */
+export const GOAL_MS = 24 * HOUR;
 
-export const MODES = {
-  workhours: {
-    label: '근무 시간',
-    hint: '평일 09–17시에만 자라요',
-    goalMs: 40 * HOUR,
-  },
-  realtime: {
-    label: '실제 시간',
-    hint: '켜둔 여부와 상관없이 1주일(168시간)',
-    goalMs: 168 * HOUR,
-  },
-  demo: {
-    label: '데모 (1분)',
-    hint: '1분 만에 피는 시연용 모드',
-    goalMs: 1 * MINUTE,
-  },
-};
-
-/** start~end 구간 중 근무 시간(schedule)과 겹치는 밀리초 합계 */
-export function workMsBetween(start, end, schedule = WORK_SCHEDULE) {
-  if (end <= start) return 0;
-  let total = 0;
-  const day = new Date(start);
-  day.setHours(0, 0, 0, 0);
-
-  while (day.getTime() < end) {
-    if (schedule.days.includes(day.getDay())) {
-      const winStart = new Date(day).setHours(schedule.startHour, 0, 0, 0);
-      const winEnd = new Date(day).setHours(schedule.endHour, 0, 0, 0);
-      const overlap = Math.min(end, winEnd) - Math.max(start, winStart);
-      if (overlap > 0) total += overlap;
-    }
-    day.setDate(day.getDate() + 1);
-  }
-  return total;
-}
-
-export function isWorkTime(now, schedule = WORK_SCHEDULE) {
-  const d = new Date(now);
-  const h = d.getHours() + d.getMinutes() / 60;
-  return schedule.days.includes(d.getDay()) && h >= schedule.startHour && h < schedule.endHour;
-}
-
-/** 모드별 "성장에 인정되는" 경과 시간 */
-export function grownMs(mode, startedAt, now) {
-  if (mode === 'workhours') return workMsBetween(startedAt, now);
+/** 성장에 인정되는 경과 시간 = 실제로 흐른 시간 */
+export function grownMs(startedAt, now) {
   return Math.max(0, now - startedAt);
 }
 
@@ -78,8 +30,8 @@ export function getPhase(progress) {
 export const SUN_BOOST = 1.1;
 
 /** from 부터 to 까지 부스터 덕분에 더 자란 시간 */
-export function sunBonusMs(mode, from, to) {
-  return from ? grownMs(mode, from, to) * (SUN_BOOST - 1) : 0;
+export function sunBonusMs(from, to) {
+  return from ? grownMs(from, to) * (SUN_BOOST - 1) : 0;
 }
 
 /**
@@ -95,7 +47,7 @@ export function foldBoost(timer, t) {
   if (!timer.boostSince) return timer;
   return {
     ...timer,
-    bonusMs: (timer.bonusMs ?? 0) + sunBonusMs(timer.mode, timer.boostSince, t),
+    bonusMs: (timer.bonusMs ?? 0) + sunBonusMs(timer.boostSince, t),
     boostSince: null,
   };
 }
@@ -107,19 +59,17 @@ export function resumeBoost(timer, t) {
 
 /** 타이머 상태 → 화면에 필요한 모든 값 */
 export function computeGrowth(timer, now = Date.now()) {
-  const { mode, startedAt, bonusMs = 0, boostSince = null } = timer;
-  const { goalMs } = MODES[mode];
+  const { startedAt, bonusMs = 0, boostSince = null } = timer;
   // bonusMs: 돌봄·지난 부스터로 앞당긴 시간 / sunBonusMs: 지금 돌고 있는 부스터 몫
-  const elapsed = grownMs(mode, startedAt, now) + bonusMs + sunBonusMs(mode, boostSince, now);
-  const progress = Math.min(1, elapsed / goalMs);
-  const left = Math.max(0, goalMs - elapsed);
+  const elapsed = grownMs(startedAt, now) + bonusMs + sunBonusMs(boostSince, now);
+  const progress = Math.min(1, elapsed / GOAL_MS);
+  const left = Math.max(0, GOAL_MS - elapsed);
   return {
     progress,
     percent: Math.floor(progress * 100),
     phase: getPhase(progress),
     // 부스터가 돌면 실제로 기다릴 시간은 1.1배 빨리 줄어든다
     remainingMs: boostSince ? left / SUN_BOOST : left,
-    resting: mode === 'workhours' && progress < 1 && !isWorkTime(now),
     sunOn: Boolean(timer.sunOn),
     thirsty: Boolean(timer.sunOn) && timer.want?.kind === 'water',
   };

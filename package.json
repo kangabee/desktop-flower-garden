@@ -1,6 +1,6 @@
 {
   "name": "desktop-flower-garden",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "데스크탑 구석에서 조용히 꽃을 피우는 미니 정원 위젯",
   "main": "electron/main.cjs",

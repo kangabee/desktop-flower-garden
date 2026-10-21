@@ -4,7 +4,6 @@ import PixelIcon from './components/PixelIcon.jsx';
 import GiftEditor from './GiftEditor.jsx';
 import { FLOWERS, FLOWER_BY_ID, RARITY } from './data/flowers.js';
 import { gardenApi, useGarden } from './lib/garden.js';
-import { MODES } from './lib/growth.js';
 import { formatDate } from './lib/card.js';
 import './collection.css';
 
@@ -113,7 +112,7 @@ export default function Collection() {
               </p>
               <p>화분을 클릭하면 물·햇빛·노래로 돌봐줄 수 있고,</p>
               <p>우클릭하면 성장 모드 같은 설정 메뉴가 열려요.</p>
-              <p>업무 시간 동안 천천히 자라 꽃이 피면 이 도감에 모여요.</p>
+              <p>씨앗은 24시간 동안 천천히 자라고, 꽃이 피면 이 도감에 모여요.</p>
             </div>
           )}
         </aside>
@@ -147,7 +146,7 @@ function FlowerDetail({ flower, entries, onGift }) {
               {e.giftFrom != null && <span className="gift-tag">🎁 {e.giftFrom || '선물'}</span>}
               <span className="muted">
                 {' '}
-                · {formatDuration(e.bloomedAt - e.startedAt)} · {MODES[e.mode]?.label ?? e.mode}
+                · {formatDuration(e.bloomedAt - e.startedAt)} 만에
               </span>
               <div className="care-counts">
                 <PixelIcon name="note" scale={1} /> {e.care?.song ?? 0}

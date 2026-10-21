@@ -3,7 +3,7 @@
 //  - 햇빛: 켜고 끄는 부스터. 켜 둔 동안 성장 속도가 ×1.1 (growth.js 의 SUN_BOOST).
 //  - 바람(want): 꽃이 가끔 물·햇빛·음악을 원한다. 원하는 걸 해주면 쿨타임 없이 +2%.
 //    햇빛을 켜 두면 흙이 빨리 말라 물을 더 자주 원하고, 물을 줄 때까지 부스터가 멈춘다.
-import { MODES } from './growth.js';
+import { GOAL_MS } from './growth.js';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -34,13 +34,11 @@ const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const BONUS_RATIO = 0.01;
 const WANT_BONUS_RATIO = 0.02;
 
-export function careCooldownMs(mode) {
-  return mode === 'demo' ? 8 * 1000 : 3 * HOUR;
-}
+export const CARE_COOLDOWN_MS = 3 * HOUR;
 
 /** 다음 바람까지의 간격. 햇빛을 켜 두면 절반 (흙이 빨리 마름) */
-export function wantIntervalMs(mode, sunOn) {
-  const base = mode === 'demo' ? 12 * 1000 : 90 * MINUTE;
+export function wantIntervalMs(sunOn) {
+  const base = 90 * MINUTE;
   return sunOn ? base / 2 : base;
 }
 
@@ -54,9 +52,9 @@ export function pickWant(timer) {
 function fulfil(timer, now) {
   return {
     ...timer,
-    bonusMs: (timer.bonusMs ?? 0) + MODES[timer.mode].goalMs * WANT_BONUS_RATIO,
+    bonusMs: (timer.bonusMs ?? 0) + GOAL_MS * WANT_BONUS_RATIO,
     want: null,
-    nextWantAt: now + wantIntervalMs(timer.mode, timer.sunOn),
+    nextWantAt: now + wantIntervalMs(timer.sunOn),
   };
 }
 
@@ -72,7 +70,7 @@ export function applyCare(timer, kind, bloomed, now = Date.now()) {
   }
 
   const last = timer.lastCare?.[kind] ?? 0;
-  const gained = !bloomed && now - last >= careCooldownMs(timer.mode);
+  const gained = !bloomed && now - last >= CARE_COOLDOWN_MS;
   const reaction = gained
     ? `${pick(CARE[kind].reactions)} (+1%)`
     : bloomed
@@ -83,7 +81,7 @@ export function applyCare(timer, kind, bloomed, now = Date.now()) {
     reaction,
     timer: {
       ...counted,
-      bonusMs: (timer.bonusMs ?? 0) + (gained ? MODES[timer.mode].goalMs * BONUS_RATIO : 0),
+      bonusMs: (timer.bonusMs ?? 0) + (gained ? GOAL_MS * BONUS_RATIO : 0),
       lastCare: gained ? { ...timer.lastCare, [kind]: now } : timer.lastCare,
     },
   };

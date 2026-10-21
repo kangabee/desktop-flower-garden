@@ -13,7 +13,7 @@ contextBridge.exposeInMainWorld('widget', {
   setIgnoreMouse: (ignore) => ipcRenderer.send('widget:set-ignore-mouse', ignore),
   getPosition: () => ipcRenderer.invoke('widget:get-position'),
   setPosition: (x, y) => ipcRenderer.send('widget:set-position', x, y),
-  /** 메뉴 구성을 위해 현재 상태(mode, bloomed)를 메인에 알림 */
+  /** 메뉴 구성을 위해 현재 상태(bloomed)를 메인에 알림 */
   reportState: (state) => ipcRenderer.send('widget:state', state),
   showMenu: () => ipcRenderer.send('widget:show-menu'),
   onCommand: (handler) => listen('widget:command', handler),

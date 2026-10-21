@@ -5,7 +5,7 @@ import PixelIcon from './components/PixelIcon.jsx';
 import CareEffect from './components/CareEffect.jsx';
 import SunBoost from './components/SunBoost.jsx';
 import { useGrowth } from './hooks/useGrowth.js';
-import { MODES, formatRemaining } from './lib/growth.js';
+import { formatRemaining } from './lib/growth.js';
 import { CARE, WANT } from './lib/care.js';
 import { gardenApi, updateGarden } from './lib/garden.js';
 import { RARITY } from './data/flowers.js';
@@ -44,14 +44,13 @@ export default function App() {
 
   // 우클릭/트레이 메뉴 구성을 위해 상태를 메인 프로세스에 알림
   useEffect(() => {
-    widget.reportState({ mode: timer.mode, bloomed });
-  }, [timer.mode, bloomed]);
+    widget.reportState({ bloomed });
+  }, [bloomed]);
 
   useEffect(
     () =>
       widget.onCommand((cmd) => {
         if (cmd.type === 'new-seed') plantNewSeed();
-        if (cmd.type === 'set-mode') plantNewSeed(cmd.mode);
         if (cmd.type === 'receive-seed') {
           const result = receiveSeed(cmd.payload);
           if (result.ok) playBloomChime();
@@ -194,7 +193,6 @@ export default function App() {
     say(seedQueue.length ? '선물받은 씨앗을 심었어요!' : '새 씨앗을 심었어요. 무슨 꽃일까요?');
   };
 
-  const mode = MODES[timer.mode];
   // 씨앗 단계 제목: 선물 씨앗은 꽃 이름을, 랜덤 씨앗은 희귀도 힌트만
   const seedTitle =
     timer.giftFrom != null
@@ -242,12 +240,12 @@ export default function App() {
           <div className="pixel-bar-fill" style={{ width: `${growth.progress * 100}%` }} />
         </div>
         <p className="bubble-sub">
-          {growth.phase.label} · {growth.resting ? '쉬는 중 (근무 시간에 자라요)' : formatRemaining(growth.remainingMs)}
+          {growth.phase.label} · {formatRemaining(growth.remainingMs)}
         </p>
         {timer.want && <p className="bubble-want">{WANT[timer.want.kind].text}</p>}
         {growth.thirsty && <p className="bubble-mode">목이 말라서 햇빛 부스터가 멈췄어요</p>}
         <p className="bubble-mode">
-          {mode.label} 모드 · {growth.sunOn ? (growth.thirsty ? '☀ 일시정지' : '☀ 햇빛 ×1.1') : '클릭해서 돌봐주기'}
+          {growth.sunOn ? (growth.thirsty ? '☀ 햇빛 일시정지' : '☀ 햇빛 ×1.1 쑥쑥') : '클릭해서 돌봐주기'}
         </p>
       </>
     );

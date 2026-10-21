@@ -36,7 +36,7 @@ function CardPage() {
       </p>
       <canvas ref={canvasRef} aria-label={`${flower.name} 선물 카드: ${card.message}`} />
       {card.seedId && <ReceiveSeed payload={hash} />}
-      <p className="viewer-foot">Desktop Flower Garden 에서 업무 시간 동안 천천히 키운 꽃이에요</p>
+      <p className="viewer-foot">Desktop Flower Garden 에서 하루 동안 천천히 키운 꽃이에요</p>
     </main>
   );
 }

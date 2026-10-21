@@ -20,17 +20,10 @@ const path = require('node:path');
 const { GardenStore } = require('./store.cjs');
 
 const isDev = process.argv.includes('--dev');
-// --demo: 실제 정원과 분리된 데이터로, 1분 만에 피는 체험용 화분을 띄운다
-const isDemo = process.argv.includes('--demo');
 const DEV_URL = 'http://localhost:5173';
 
 // 말풍선·햇빛 연출이 창 가장자리에서 잘리지 않도록 여유 있게 (투명한 부분은 클릭이 통과하므로 무해)
 const WIDGET = { width: 280, height: 300, margin: 16 };
-const MODE_LABELS = {
-  workhours: '근무 시간 (평일 09–17시, 40시간)',
-  realtime: '실제 시간 (1주일, 168시간)',
-  demo: '데모 (1분)',
-};
 
 let win = null;
 let collectionWin = null;
@@ -38,8 +31,7 @@ let tray = null;
 let store = null;
 let pinned = true;
 // 렌더러가 보내주는 현재 상태 (메뉴 구성용)
-let plantState = { mode: 'workhours', bloomed: false };
-let pendingDemoSeed = false;
+let plantState = { bloomed: false };
 // 선물 링크의 "씨앗 받기"로 들어온 씨앗 (위젯이 준비되면 전달)
 const pendingSeeds = [];
 let widgetReady = false;
@@ -70,7 +62,7 @@ app.on('open-url', (event, url) => {
 if (seedLinkIn(process.argv)) handleSeedLink(seedLinkIn(process.argv));
 
 // 개발 실행(npm run dev)과 설치된 앱이 같은 정원 데이터를 쓰도록 저장 폴더 이름을 고정
-app.setPath('userData', path.join(app.getPath('appData'), isDemo ? 'desktop-flower-garden-demo' : 'desktop-flower-garden'));
+app.setPath('userData', path.join(app.getPath('appData'), 'desktop-flower-garden'));
 
 // 아이콘을 두 번 눌러도 화분이 두 개 생기지 않게: 이미 실행 중이면 그쪽에서 도감을 연다
 const gotLock = app.requestSingleInstanceLock();
@@ -148,8 +140,6 @@ function createWidgetWindow() {
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setIgnoreMouseEvents(true, { forward: true });
   loadPage(win);
-  // 체험 모드 첫 실행: 위젯이 준비되어 첫 상태를 보고하면 데모 씨앗으로 바꿔 심는다
-  pendingDemoSeed = isDemo && !store.get().timer;
 
   win.on('closed', () => {
     win = null;
@@ -212,15 +202,6 @@ function buildMenu() {
       click: () => send({ type: 'new-seed' }),
     },
     { type: 'separator' },
-    {
-      label: '성장 모드 (바꾸면 새 씨앗부터)',
-      submenu: Object.entries(MODE_LABELS).map(([mode, label]) => ({
-        label,
-        type: 'radio',
-        checked: plantState.mode === mode,
-        click: () => send({ type: 'set-mode', mode }),
-      })),
-    },
     {
       label: '항상 위에 표시',
       type: 'checkbox',
@@ -317,10 +298,6 @@ ipcMain.on('widget:set-position', (_event, x, y) => {
   win.setPosition(Math.round(nx), Math.round(ny));
 });
 ipcMain.on('widget:state', (_event, state) => {
-  if (pendingDemoSeed) {
-    pendingDemoSeed = false;
-    send({ type: 'set-mode', mode: 'demo' });
-  }
   if (!widgetReady) {
     widgetReady = true;
     for (const payload of pendingSeeds.splice(0)) send({ type: 'receive-seed', payload });
