@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desktop Flower Garden</title>
+    <meta name="description" content="업무 시간 동안 바탕화면 구석에서 조용히 꽃을 피우는 도트 정원" />
+    <link rel="icon" href="icon.png" />
+    <style>
+      @font-face { font-family: 'Galmuri11'; src: url('fonts/Galmuri11.woff2') format('woff2'); font-weight: 400; }
+      @font-face { font-family: 'Galmuri11'; src: url('fonts/Galmuri11-Bold.woff2') format('woff2'); font-weight: 700; }
+      :root { --ink: #2b1b22; --paper: #fffaf2; --muted: #8a6f6f; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Galmuri11', system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle, rgba(43, 27, 34, 0.07) 1px, transparent 1.5px) 0 0 / 14px 14px,
+          #fdf0f4;
+      }
+      main { max-width: 640px; margin: 0 auto; padding: 48px 16px 64px; text-align: center; }
+      .icon { width: 128px; height: 128px; image-rendering: pixelated; }
+      h1 { margin: 12px 0 8px; font-size: 26px; }
+      .lead { margin: 0 0 28px; line-height: 1.7; color: var(--muted); }
+      .downloads { display: grid; gap: 12px; max-width: 360px; margin: 0 auto 12px; }
+      .btn {
+        display: block;
+        padding: 12px 16px;
+        border: 3px solid var(--ink);
+        background: #fff;
+        box-shadow: 4px 4px 0 var(--ink);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 700;
+      }
+      .btn small { display: block; margin-top: 2px; font-weight: 400; color: var(--muted); }
+      .btn.primary { background: #b4e89e; }
+      .btn:active { transform: translate(4px, 4px); box-shadow: none; }
+      .all { font-size: 12px; color: var(--muted); }
+      section {
+        margin-top: 36px;
+        padding: 16px 18px;
+        text-align: left;
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        box-shadow: 4px 4px 0 rgba(43, 27, 34, 0.15);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      section h2 { margin: 0 0 6px; font-size: 15px; }
+      section ol, section ul { margin: 0; padding-left: 20px; }
+      code { background: #f1e6ea; padding: 0 4px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="icon" src="icon.png" alt="" />
+      <h1>Desktop Flower Garden</h1>
+      <p class="lead">
+        업무·공부하는 동안 바탕화면 구석에서 조용히 꽃을 피우는 작은 도트 정원.<br />
+        다 핀 꽃은 도감에 모으고, 링크 하나로 친구에게 씨앗을 선물해요.
+      </p>
+
+      <div class="downloads">
+        <a class="btn" id="mac-arm" data-file="DesktopFlowerGarden-mac-arm64.dmg">
+          macOS · Apple 칩 <small>M1 · M2 · M3 · M4 …</small>
+        </a>
+        <a class="btn" id="mac-intel" data-file="DesktopFlowerGarden-mac-x64.dmg">macOS · Intel 칩</a>
+        <a class="btn" id="win" data-file="DesktopFlowerGarden-win-setup.exe">Windows</a>
+      </div>
+      <p class="all"><a id="all-releases">모든 버전 보기</a></p>
+
+      <section>
+        <h2>처음 열 때 경고가 나오면</h2>
+        <ul>
+          <li>
+            <b>macOS</b>: dmg 를 열어 앱을 Applications 로 옮긴 뒤 실행 → 경고가 나오면
+            <b>시스템 설정 → 개인정보 보호 및 보안</b> 아래의 <b>"그래도 열기"</b>.
+          </li>
+          <li><b>Windows</b>: 파란 "PC 보호" 창에서 <b>추가 정보 → 실행</b>.</li>
+        </ul>
+        개인이 만든 앱이라 Apple·Microsoft 유료 인증을 받지 않아 나오는 경고예요.
+      </section>
+
+      <section>
+        <h2>이렇게 써요</h2>
+        <ol>
+          <li>실행하면 화면 오른쪽 아래에 화분이 생겨요. 랜덤 씨앗이 근무 시간 동안 천천히 자라요.</li>
+          <li>화분을 클릭하면 🎵 노래 · 💧 물 · ☀ 햇빛으로 돌볼 수 있어요.</li>
+          <li>꽃이 피면 도감에 모이고, <b>선물하기</b>로 링크를 보내면 친구도 같은 꽃을 키울 수 있어요.</li>
+        </ol>
+      </section>
+    </main>
+
+    <script>
+      // owner.github.io/repo/ 주소에서 저장소를 알아내 최신 Releases 다운로드 링크를 만든다
+      const owner = location.hostname.split('.')[0];
+      const repo = location.pathname.split('/').filter(Boolean)[0] || 'desktop-flower-garden';
+      const releases = `https://github.com/${owner}/${repo}/releases`;
+      document.querySelectorAll('[data-file]').forEach((a) => {
+        a.href = `${releases}/latest/download/${a.dataset.file}`;
+      });
+      document.getElementById('all-releases').href = releases;
+
+      // 방문자 OS에 맞는 버튼을 강조
+      const ua = navigator.userAgent;
+      const pick = /Windows/.test(ua) ? 'win' : /Mac/.test(ua) ? 'mac-arm' : null;
+      if (pick) document.getElementById(pick).classList.add('primary');
+    </script>
+  </body>
+</html>

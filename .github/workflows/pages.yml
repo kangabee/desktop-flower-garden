@@ -1,0 +1,53 @@
+# main 브랜치에 올라올 때마다 선물 카드 페이지(card.html)와 다운로드 페이지를 GitHub Pages 에 배포한다.
+#   https://<owner>.github.io/<repo>/           다운로드 페이지
+#   https://<owner>.github.io/<repo>/card.html  선물 링크가 여는 카드 페이지
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # 무료 플랜의 비공개 저장소는 Pages 를 쓸 수 없으므로, 공개로 바꾸기 전까지는 건너뛴다
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Share URLs from this repository
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "VITE_SHARE_BASE_URL=https://$OWNER.github.io/${{ github.event.repository.name }}/card.html" >> "$GITHUB_ENV"
+          echo "VITE_DOWNLOAD_URL=https://$OWNER.github.io/${{ github.event.repository.name }}/" >> "$GITHUB_ENV"
+      - run: npm run build
+      - name: Assemble site (card page + download page)
+        run: |
+          mkdir -p site/fonts
+          cp dist/card.html site/
+          cp -r dist/assets site/
+          cp pages/index.html site/index.html
+          cp build/icon.png site/icon.png
+          cp node_modules/galmuri/dist/Galmuri11.woff2 node_modules/galmuri/dist/Galmuri11-Bold.woff2 site/fonts/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

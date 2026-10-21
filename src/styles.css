@@ -1,0 +1,342 @@
+:root {
+  --ink: #2b1b22;
+  --paper: #fffaf2;
+  --muted: #8a6f6f;
+  font-family: 'Galmuri11', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: none;
+}
+
+* { box-sizing: border-box; }
+
+/* 창 자체가 완전히 투명 → 바탕화면/엑셀 위에 화분 도트만 보인다 */
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+}
+html[data-view='widget'] body, html[data-view='widget'] #root {
+  overflow: hidden;
+  user-select: none;
+}
+
+.overlay {
+  position: relative;
+  height: 100%;
+}
+.overlay.is-hover { cursor: grab; }
+.overlay.is-hover:active { cursor: grabbing; }
+
+/* ── 화분 (창 바닥 가운데에 붙어서 작업표시줄 위에 올라앉음) ── */
+.stage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+}
+.plant { display: block; }
+.plant.hop { animation: hop 0.45s steps(4) both; }
+.plant.pop { animation: pop 0.6s steps(3) both; }
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-9px); }
+  70% { transform: translateY(-3px); }
+}
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ── 도트 말풍선 ── */
+.bubble {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 190px;
+  margin: 0 auto;
+  bottom: 134px;
+  padding: 7px 9px 6px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(43, 27, 34, 0.25);
+  font-size: 11px;
+  line-height: 1.35;
+  animation: bubble-in 0.2s steps(2) both;
+  pointer-events: none;
+  z-index: 2;
+}
+.bubble::after {
+  /* 픽셀 꼬리 */
+  content: '';
+  position: absolute;
+  left: calc(50% - 4px);
+  bottom: -8px;
+  width: 8px;
+  height: 6px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-top: none;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.bubble p { margin: 0; }
+.bubble-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-weight: 700;
+  font-size: 12px;
+}
+.stars { font-size: 10px; letter-spacing: 1px; }
+.bubble-percent { font-weight: 400; color: var(--muted); }
+.bubble-lang { margin-top: 2px !important; color: #b04d6f; }
+.bubble-sub { margin-top: 3px !important; color: var(--ink); font-size: 10px; }
+.bubble-mode { margin-top: 2px !important; color: var(--muted); font-size: 10px; }
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pixel-bar {
+  height: 6px;
+  margin-top: 4px;
+  border: 1px solid var(--ink);
+  background: #e9f5e4;
+}
+.pixel-bar-fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, #74c96f 0 4px, #5fb35e 4px 8px);
+}
+
+/* ── 도트 파티클 ── */
+.particles {
+  position: absolute;
+  left: 50%;
+  width: 200px;
+  margin-left: -100px;
+  bottom: 60px;
+  height: 130px;
+  pointer-events: none;
+}
+.particle {
+  position: absolute;
+  bottom: 0;
+  opacity: 0;
+  animation-name: float-up;
+  animation-timing-function: steps(8);
+  animation-iteration-count: infinite;
+}
+.particles-burst .particle { animation-iteration-count: 1; }
+@keyframes float-up {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--drift), -110px); opacity: 0; }
+}
+
+/* ── 개발용 도감 미리보기 (#gallery) ── */
+.gallery {
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+  background: #cfe3f5;
+  user-select: text;
+}
+.gallery-row { margin-bottom: 12px; }
+.gallery-row header { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+.gallery-row small { color: var(--muted); }
+.gallery-sprites { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; }
+
+/* ── 돌봄 액션 바 (화분 클릭 시) ── */
+.actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 132px;
+  width: fit-content;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(43, 27, 34, 0.25);
+  z-index: 3;
+  animation: bubble-in 0.15s steps(2) both;
+}
+.actions-open .bubble { bottom: 168px; }
+.action-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.action-btn:hover:not(:disabled) { background: #ffe9ef; }
+.action-btn:active:not(:disabled) { transform: translateY(1px); }
+.action-btn:disabled { opacity: 0.4; cursor: default; }
+.action-sep { width: 2px; height: 18px; background: rgba(43, 27, 34, 0.2); }
+
+/* ── 돌봄 연출 ── */
+/* 연출 좌표는 "화분을 가운데 둔 200×240 무대" 기준 → 창이 커져도 화분과 같이 움직인다 */
+.fx, .sunboost {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 200px;
+  height: 240px;
+  margin-left: -100px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.fx-can {
+  position: absolute;
+  left: 26px;
+  top: 104px;
+  animation: can-tilt 2.6s steps(1) both;
+}
+@keyframes can-tilt {
+  0% { transform: translate(-12px, -6px); opacity: 0; }
+  10% { transform: translate(0, 0); opacity: 1; }
+  20%, 80% { transform: rotate(18deg); opacity: 1; }
+  90% { transform: translate(0, 0); opacity: 1; }
+  100% { opacity: 0; }
+}
+.fx-drop {
+  position: absolute;
+  top: 128px;
+  opacity: 0;
+  /* 도트 크기(2px)의 배수로만 움직여야 픽셀이 뭉개지지 않는다: 48px ÷ 8칸 = 6px */
+  animation: drop-fall 0.7s steps(8) 2;
+}
+@keyframes drop-fall {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(48px); opacity: 0; }
+}
+
+.fx-sun-a, .fx-sun-b { position: absolute; inset: 0; }
+.fx-sun-a { animation: blink 0.5s steps(1) infinite; }
+.fx-sun-b { animation: blink 0.5s steps(1) infinite reverse; }
+@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes ray-fall {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(-24px, 60px); opacity: 0; }
+}
+@keyframes fade-in-out {
+  0% { opacity: 0; }
+  15%, 85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.fx-note {
+  position: absolute;
+  bottom: 70px;
+  opacity: 0;
+  animation: note-up 1.6s steps(8) 1 both;
+}
+@keyframes note-up {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 1; }
+  50% { transform: translate(6px, -40px); }
+  100% { transform: translate(-6px, -90px); opacity: 0; }
+}
+
+.plant.happy { animation: happy 0.6s steps(2) 3; }
+@keyframes happy {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* ── 햇빛 부스터 (켜 둔 동안 유지) ── */
+.action-btn.active { background: #fff1b8; box-shadow: inset 0 0 0 2px #f5b630; }
+.sunboost-glow {
+  /* 해를 중심으로 한 정사각형 안에서 가장자리까지 완전히 투명해지게 → 창에 닿아도 뚝 끊기지 않음 */
+  position: absolute;
+  left: 95px;
+  top: 51px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle closest-side, rgba(255, 216, 77, 0.32), rgba(255, 216, 77, 0.12) 55%, transparent);
+  animation: glow-pulse 3s steps(4) infinite;
+}
+.sunboost-body {
+  position: absolute;
+  right: 18px;
+  top: 104px;
+  width: 34px;
+  height: 34px;
+}
+.sunboost-badge {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  padding: 0 3px;
+  background: var(--ink);
+  color: #ffe27a;
+  font-size: 9px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.sunboost-ray {
+  position: absolute;
+  top: 128px;
+  opacity: 0;
+  animation: ray-fall 2.1s steps(6) infinite;
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* 목말라서 부스터가 멈춘 해 */
+.sunboost.paused .sunboost-glow,
+.sunboost.paused .sunboost-ray { display: none; }
+.sunboost.paused .sunboost-body { opacity: 0.5; filter: grayscale(0.6); }
+
+/* ── 꽃의 바람 (물·햇빛·음악을 원해요) ── */
+.want {
+  position: absolute;
+  left: calc(50% - 62px);
+  bottom: 96px;
+  padding: 2px 3px 0;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 rgba(43, 27, 34, 0.25);
+  z-index: 2;
+  pointer-events: none;
+  animation: want-bob 1.2s steps(2) infinite;
+}
+.want::after {
+  /* 생각 풍선 꼬리 (점 두 개) */
+  content: '';
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  width: 4px;
+  height: 4px;
+  background: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+@keyframes want-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.bubble-want { margin-top: 3px !important; color: #3b7dd8; font-size: 10px; font-weight: 700; }
+
+/* 씨앗이 가끔 꼼지락 */
+.plant.seed-idle { animation: seed-wiggle 5s steps(1) infinite; }
+@keyframes seed-wiggle {
+  0%, 84%, 100% { transform: translateX(0); }
+  87% { transform: translateX(-3px); }
+  90% { transform: translateX(3px); }
+  93% { transform: translateX(-3px); }
+  96% { transform: translateX(0); }
+}

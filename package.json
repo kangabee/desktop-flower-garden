@@ -1,0 +1,96 @@
+{
+  "name": "desktop-flower-garden",
+  "version": "0.1.0",
+  "private": true,
+  "description": "데스크탑 구석에서 조용히 꽃을 피우는 미니 정원 위젯",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n vite,electron -c magenta,green \"vite --port 5173 --strictPort\" \"wait-on tcp:5173 && electron . --dev\"",
+    "build": "vite build",
+    "start": "vite build && electron .",
+    "icon": "node scripts/make-icon.mjs",
+    "dist:mac": "vite build && electron-builder --mac",
+    "dist:win": "vite build && electron-builder --win",
+    "dist": "vite build && electron-builder --mac --win"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.0",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.15.3",
+    "galmuri": "^2.40.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "vite": "^7.0.0",
+    "wait-on": "^8.0.3"
+  },
+  "allowScripts": {
+    "electron@37.10.3": true,
+    "esbuild@0.28.2": true
+  },
+  "productName": "Desktop Flower Garden",
+  "author": "Desktop Flower Garden",
+  "build": {
+    "appId": "com.desktopflowergarden.app",
+    "productName": "Desktop Flower Garden",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.lifestyle",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "notarize": false,
+      "extendInfo": {
+        "LSUIElement": true
+      },
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "title": "Desktop Flower Garden",
+      "artifactName": "DesktopFlowerGarden-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Desktop Flower Garden",
+      "artifactName": "DesktopFlowerGarden-win-setup.${ext}"
+    },
+    "protocols": [
+      {
+        "name": "Desktop Flower Garden",
+        "schemes": [
+          "flowergarden"
+        ]
+      }
+    ]
+  }
+}
