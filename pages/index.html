@@ -52,6 +52,13 @@
       section h2 { margin: 0 0 6px; font-size: 15px; }
       section ol, section ul { margin: 0; padding-left: 20px; }
       code { background: #f1e6ea; padding: 0 4px; }
+      .changelog article + article { margin-top: 14px; padding-top: 12px; border-top: 2px dashed rgba(43, 27, 34, 0.2); }
+      .changelog h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 14px; }
+      .changelog time { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--muted); }
+      .changelog ul { margin: 0; padding-left: 20px; }
+      .changelog li + li { margin-top: 2px; }
+      .tag { padding: 0 6px; background: #b4e89e; border: 2px solid var(--ink); font-size: 11px; }
+      .tag.first { background: #ffd0dc; }
     </style>
   </head>
   <body>
@@ -92,6 +99,40 @@
           <li>꽃 31종을 대륙별 도감에 모아요. 무궁화·국화 같은 나라꽃은 국기가 붙은 전설 꽃이에요.</li>
           <li>꽃이 피면 도감에 모이고, <b>선물하기</b>로 링크를 보내면 친구도 같은 꽃을 키울 수 있어요.</li>
         </ol>
+      </section>
+
+      <section class="changelog">
+        <h2>업데이트 기록</h2>
+
+        <article>
+          <h3>v0.3.0 <span class="tag">최신</span> <time datetime="2026-10-22">2026.10.22</time></h3>
+          <ul>
+            <li>새 꽃 17종 추가 → 모두 31종. 꽃말이 따뜻한 꽃만 골랐어요.</li>
+            <li>무궁화 · 모란 · 매화 · 국화 · 히비스커스 · 붓꽃 · 수레국화 · 카네이션 · 달리아 · 골든 와틀 · 킹 프로테아 등 <b>나라꽃은 전설 등급</b>, 도감 · 말풍선 · 선물 카드에 도트 국기가 붙어요.</li>
+            <li>개나리 · 진달래 · 미선나무 · 금강초롱꽃 등 한국의 꽃과 캐모마일 · 블루보넷 추가.</li>
+            <li><b>비료</b> 추가: 한 번에 1시간 빨리 자라요 (12시간에 한 번, 햇빛이 켜져 있을 땐 사용 불가).</li>
+            <li>도감을 <b>대륙별</b>(아시아 · 유럽 · 아메리카 · 오세아니아 · 아프리카 · 환상의 꽃)로 나누고 대륙마다 모은 개수를 보여줘요.</li>
+          </ul>
+        </article>
+
+        <article>
+          <h3>v0.2.0 <time datetime="2026-10-22">2026.10.22</time></h3>
+          <ul>
+            <li>성장 방식을 하나로: 씨앗을 심고 <b>실제 시간 24시간</b>이면 꽃이 펴요. 앱을 꺼 두거나 컴퓨터를 재워도 시간은 흘러가요.</li>
+            <li>근무 시간 / 실제 시간 / 데모 모드 선택을 없앴어요. 키우던 꽃은 새 방식으로 이어서 자라요.</li>
+          </ul>
+        </article>
+
+        <article>
+          <h3>v0.1.0 <span class="tag first">첫 공개</span> <time datetime="2026-10-22">2026.10.22</time></h3>
+          <ul>
+            <li>바탕화면 위에 화분만 떠 있는 투명 도트 위젯 (빈 곳 클릭은 아래 앱으로 그대로 통과).</li>
+            <li>랜덤 씨앗 14종 · 희귀도 3단계, 씨앗 → 새싹 → 줄기 → 꽃봉오리 → 만개.</li>
+            <li>돌봄: 🎵 노래 · 💧 물 · ☀ 햇빛 부스터(×1.1), 가끔 꽃이 원하는 걸 들어주면 더 빨리 자라요.</li>
+            <li>꽃 도감과 키운 기록.</li>
+            <li>선물 링크: 편지를 써서 보내면 받은 사람이 <b>씨앗 받기</b> 한 번으로 같은 꽃을 키워요.</li>
+          </ul>
+        </article>
       </section>
     </main>
 
