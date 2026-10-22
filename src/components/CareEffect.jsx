@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import PixelIcon from './PixelIcon.jsx';
-import { SONG_SECONDS, playSong, playWater } from '../lib/sound.js';
+import { SONG_SECONDS, playFertilizer, playSong, playWater } from '../lib/sound.js';
 
 // 돌봄 연출 (모두 CSS steps() 애니메이션 → 끝나면 onDone)
-const DURATION = { song: SONG_SECONDS * 1000, water: 2600 };
-const SOUND = { song: playSong, water: playWater };
+const DURATION = { song: SONG_SECONDS * 1000, water: 2600, fertilizer: 2400 };
+const SOUND = { song: playSong, water: playWater, fertilizer: playFertilizer };
 
 export default function CareEffect({ kind, onDone }) {
   useEffect(() => {
@@ -13,15 +13,14 @@ export default function CareEffect({ kind, onDone }) {
     return () => clearTimeout(id);
   }, [kind, onDone]);
 
-  const items = useMemo(
-    () =>
-      Array.from({ length: kind === 'water' ? 12 : 6 }, (_, i) => ({
-        id: i,
-        x: Math.random(),
-        delay: (i / (kind === 'water' ? 12 : 6)) * (kind === 'song' ? 3 : 1.4),
-      })),
-    [kind],
-  );
+  const items = useMemo(() => {
+    const n = kind === 'song' ? 6 : 12;
+    return Array.from({ length: n }, (_, i) => ({
+      id: i,
+      x: Math.random(),
+      delay: (i / n) * (kind === 'song' ? 3 : 1.4),
+    }));
+  }, [kind]);
 
   if (kind === 'water') {
     return (
@@ -34,6 +33,23 @@ export default function CareEffect({ kind, onDone }) {
             scale={2}
             className="fx-drop"
             style={{ left: 68 + Math.round(d.x * 6) * 2, animationDelay: `${0.35 + d.delay}s` }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (kind === 'fertilizer') {
+    return (
+      <div className="fx fx-fertilizer" aria-hidden="true">
+        <PixelIcon name="fertilizer" scale={3} className="fx-bag" />
+        {items.map((d) => (
+          <PixelIcon
+            key={d.id}
+            name="grain"
+            scale={2}
+            className="fx-grain"
+            style={{ left: 86 + Math.round(d.x * 8) * 2, animationDelay: `${0.3 + d.delay}s` }}
           />
         ))}
       </div>

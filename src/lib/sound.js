@@ -86,3 +86,16 @@ export function playSun() {
     );
   });
 }
+
+/** 비료: 톡톡 떨어지는 낮은 소리 */
+export function playFertilizer() {
+  safely((ac) => {
+    const t = ac.currentTime + 0.05;
+    for (let i = 0; i < 5; i++) {
+      const f = 220 + Math.random() * 120;
+      tone(ac, { freq: f, glideTo: f * 0.7, start: t + i * 0.12, length: 0.1, type: 'triangle', volume: 0.07 });
+    }
+    tone(ac, { freq: NOTE.C5, start: t + 0.7, length: 0.6, volume: 0.06 });
+    tone(ac, { freq: NOTE.G5, start: t + 0.8, length: 0.6, volume: 0.05 });
+  });
+}

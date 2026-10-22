@@ -12,6 +12,7 @@ const DEFAULT_STATE = {
   seedQueue: [], // 선물받아 심을 차례를 기다리는 씨앗
   redeemed: [], // 이미 받은 씨앗 ID (같은 선물 링크로 두 번 받기 방지)
   gardenId: null, // 이 정원(설치)의 숨은 ID
+  fertilizedAt: 0, // 마지막으로 비료를 준 시각 (12시간 쿨타임)
 };
 
 class GardenStore {

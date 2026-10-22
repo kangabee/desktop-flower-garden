@@ -4,6 +4,7 @@ import PixelParticles from './components/PixelParticles.jsx';
 import PixelIcon from './components/PixelIcon.jsx';
 import CareEffect from './components/CareEffect.jsx';
 import SunBoost from './components/SunBoost.jsx';
+import PixelFlag from './components/PixelFlag.jsx';
 import { useGrowth } from './hooks/useGrowth.js';
 import { formatRemaining } from './lib/growth.js';
 import { CARE, WANT } from './lib/care.js';
@@ -24,7 +25,8 @@ const widget = window.widget ?? {
 const SWAY_FRAMES = [0, 1, 0, -1];
 
 export default function App() {
-  const { timer, growth, flower, bloomed, plantNewSeed, care, toggleSun, receiveSeed, seedQueue } = useGrowth();
+  const { timer, growth, flower, bloomed, plantNewSeed, care, toggleSun, fertilize, fertilizerState, receiveSeed, seedQueue } =
+    useGrowth();
   const plantRef = useRef(null);
   const [hover, setHover] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -187,6 +189,15 @@ export default function App() {
     say(reaction);
   };
 
+  const onFertilize = () => {
+    if (effect) return;
+    const result = fertilize();
+    if (!result.ok) return say(result.text);
+    setEffect('fertilizer');
+    setReactionTitle(null);
+    setReaction(result.text);
+  };
+
   const onNewSeed = () => {
     plantNewSeed();
     setActionsOpen(false);
@@ -217,7 +228,10 @@ export default function App() {
     bubble = (
       <>
         <p className="bubble-title">
-          {flower.name}
+          <span className="bubble-name">
+            {flower.nation && <PixelFlag code={flower.nation} />}
+            {flower.name}
+          </span>
           <span className="stars" style={{ color: rarity.color }}>
             {'★'.repeat(rarity.stars)}
           </span>
@@ -281,6 +295,14 @@ export default function App() {
           >
             <PixelIcon name="sun" />
           </button>
+          <button
+            className={`action-btn${fertilizerState.ok ? '' : ' unavailable'}`}
+            title={fertilizerState.ok ? '비료 주기 (1시간 빨리, 12시간마다)' : fertilizerState.reason}
+            aria-label="비료 주기"
+            onClick={onFertilize}
+          >
+            <PixelIcon name="fertilizer" />
+          </button>
           <span className="action-sep" />
           <button
             className="action-btn"
@@ -334,7 +356,7 @@ export default function App() {
         )}
         <PixelPlant
           ref={plantRef}
-          className={`plant${hop ? ' hop' : ''}${burst ? ' pop' : ''}${effect === 'water' ? ' happy' : ''}${
+          className={`plant${hop ? ' hop' : ''}${burst ? ' pop' : ''}${effect === 'water' || effect === 'fertilizer' ? ' happy' : ''}${
             growth.phase.key === 'seed' && !hop ? ' seed-idle' : ''
           }`}
           flower={flower}

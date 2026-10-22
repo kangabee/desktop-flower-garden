@@ -132,6 +132,24 @@ export const ICONS = {
     rows: ['.a.', 'aaa', 'awa', '.a.'],
     colors: { a: '#7cc4ff', w: '#e6f5ff' },
   },
+  fertilizer: {
+    rows: [
+      '..kkkkk..',
+      '.kKKKKKk.',
+      '.kwwwwwk.',
+      '.kwgggwk.',
+      '.kwgLgwk.',
+      '.kwgggwk.',
+      '.kwwwwwk.',
+      '.kKKKKKk.',
+      '..kkkkk..',
+    ],
+    colors: { k: '#a0704a', K: '#7a5236', w: '#f5e6c8', g: '#5fb35e', L: '#b4e89e' },
+  },
+  grain: {
+    rows: ['ab', 'ba'],
+    colors: { a: '#7a5236', b: '#a6d96a' },
+  },
   sparkle: {
     rows: ['.a.', 'awa', '.a.'],
     colors: { a: '#ffd84d', w: '#fff6c2' },

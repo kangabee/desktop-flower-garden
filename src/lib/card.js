@@ -1,7 +1,8 @@
 // 선물 카드: 캔버스 렌더링 · 공유 링크 인코딩 · 단독 HTML 카드 파일
 import { drawGrid, mix } from './pixel.js';
 import { SPRITE_H, SPRITE_W, buildPlantGrid } from './sprites.js';
-import { FLOWER_BY_ID, RARITY } from '../data/flowers.js';
+import { FLOWER_BY_ID, NATIONS, RARITY } from '../data/flowers.js';
+import { flagGrid } from '../data/flags.js';
 import { seedCheck } from './ids.js';
 
 export const CARD_W = 360;
@@ -103,10 +104,31 @@ export async function renderGiftCard(canvas, data, scale = 2) {
   ctx.textAlign = 'center';
   ctx.font = `700 20px ${FONT}`;
   ctx.fillStyle = INK;
-  ctx.fillText(flower.name, cx, 298);
+  if (flower.nation) {
+    // 나라 대표 꽃: 이름 왼쪽에 도트 국기 (이름+국기를 한 덩어리로 가운데 정렬)
+    const flag = flagGrid(flower.nation);
+    const fs = 2;
+    const fw = flag[0].length * fs;
+    const nameW = ctx.measureText(flower.name).width;
+    const left = cx - (fw + 8 + nameW) / 2;
+    const flagCanvas = document.createElement('canvas');
+    flagCanvas.width = fw;
+    flagCanvas.height = flag.length * fs;
+    drawGrid(flagCanvas.getContext('2d'), flag, fs);
+    ctx.drawImage(flagCanvas, Math.round(left), 280);
+    ctx.textAlign = 'left';
+    ctx.fillText(flower.name, left + fw + 8, 298);
+    ctx.textAlign = 'center';
+  } else {
+    ctx.fillText(flower.name, cx, 298);
+  }
   ctx.font = `400 12px ${FONT}`;
   ctx.fillStyle = rarity.color;
-  ctx.fillText(`${'★'.repeat(rarity.stars)} ${rarity.label}`, cx, 318);
+  ctx.fillText(
+    `${'★'.repeat(rarity.stars)} ${rarity.label}${flower.nation ? ` · ${NATIONS[flower.nation]}의 꽃` : ''}`,
+    cx,
+    318,
+  );
   ctx.fillStyle = '#b04d6f';
   ctx.font = `400 13px ${FONT}`;
   ctx.fillText(`꽃말 「${flower.language}」`, cx, 340);

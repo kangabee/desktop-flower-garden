@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { computeGrowth, foldBoost, resumeBoost } from '../lib/growth.js';
-import { applyCare, applySun, pickWant, wantIntervalMs } from '../lib/care.js';
+import { computeGrowth, foldBoost, formatRemaining, resumeBoost } from '../lib/growth.js';
+import {
+  FERTILIZER_COOLDOWN_MS,
+  FERTILIZER_MS,
+  applyCare,
+  applySun,
+  pickWant,
+  wantIntervalMs,
+} from '../lib/care.js';
 import { getGarden, updateGarden, useGarden } from '../lib/garden.js';
 import { decodeCard } from '../lib/card.js';
 import { FLOWER_BY_ID, pickRandomFlower } from '../data/flowers.js';
@@ -17,7 +24,7 @@ export function createTimer(legacy, gift = null) {
     flowerId,
     giftFrom: gift ? gift.from || '' : null, // null = 직접 받은 랜덤 씨앗
     bonusMs: 0,
-    care: { song: 0, water: 0, sun: 0 },
+    care: { song: 0, water: 0, sun: 0, fertilizer: 0 },
     lastCare: {},
     sunOn: false, // 햇빛 부스터 스위치
     boostSince: null, // 부스터가 실제로 돌기 시작한 시각 (목마르면 멈춤)
@@ -135,6 +142,31 @@ export function useGrowth() {
     return out;
   }, []);
 
+  /** 비료가 지금 가능한지 → { ok, reason } (버튼을 흐리게 할지 정하는 데도 쓴다) */
+  const fertilizerState = (() => {
+    if (bloomed) return { ok: false, reason: '이미 활짝 폈어요!' };
+    if (timer.sunOn) return { ok: false, reason: '햇빛이 켜져 있을 땐 비료를 줄 수 없어요' };
+    const left = FERTILIZER_COOLDOWN_MS - (now - (garden.fertilizedAt ?? 0));
+    if (left > 0) return { ok: false, reason: `비료는 ${formatRemaining(left).replace(' 남음', '')} 뒤에 또 줄 수 있어요` };
+    return { ok: true, reason: '' };
+  })();
+
+  /** 비료: 1시간 앞당기기 → { ok, text } */
+  const fertilize = useCallback(() => {
+    if (!fertilizerState.ok) return { ok: false, text: fertilizerState.reason };
+    const t = Date.now();
+    updateGarden((s) => ({
+      fertilizedAt: t,
+      timer: {
+        ...s.timer,
+        bonusMs: (s.timer.bonusMs ?? 0) + FERTILIZER_MS,
+        care: { ...s.timer.care, fertilizer: (s.timer.care?.fertilizer ?? 0) + 1 },
+      },
+    }));
+    setNow(t);
+    return { ok: true, text: '영양 듬뿍! 1시간 빨리 자라요' };
+  }, [fertilizerState.ok, fertilizerState.reason]);
+
   /**
    * 선물 링크의 "씨앗 받기"로 들어온 씨앗 → { ok, text }
    * 숨은 씨앗 ID·정원 ID로 확인만 하고, 사용자는 아무것도 입력하지 않는다.
@@ -172,6 +204,8 @@ export function useGrowth() {
     plantNewSeed,
     care,
     toggleSun,
+    fertilize,
+    fertilizerState,
     receiveSeed,
     seedQueue: garden.seedQueue ?? [],
   };

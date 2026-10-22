@@ -60,7 +60,7 @@
   color: var(--ink);
   cursor: pointer;
 }
-.slot canvas { width: 54px !important; height: 86px !important; }
+.slot canvas:not(.slot-flag) { width: 54px !important; height: 86px !important; }
 .slot:hover:not(:disabled) { background: #fff0f4; }
 .slot.selected { background: #ffe4ec; transform: translate(1px, 1px); box-shadow: 2px 2px 0 rgba(43, 27, 34, 0.18); }
 .slot.locked { cursor: default; color: var(--muted); border-style: dashed; box-shadow: none; }
@@ -180,3 +180,25 @@
 .status.ok { color: #3f8a44; }
 .status.err { color: #c9304f; }
 .gift-tag { margin-left: 6px; padding: 0 4px; background: #ffe4ec; font-size: 10px; }
+
+/* ── 대륙별 도감 탭 ── */
+.region-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 14px; }
+.region-tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 2px solid var(--ink);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.region-tab small { font-size: 10px; color: var(--muted); }
+.region-tab:hover { background: #fff0f4; }
+.region-tab.active { background: #ffd0dc; box-shadow: 2px 2px 0 var(--ink); }
+.region-tab.complete small { color: #3f8a44; font-weight: 700; }
+
+.slot-flag { position: absolute; top: 4px; left: 4px; z-index: 1; }
+.where { display: flex; align-items: center; gap: 5px; margin-top: 4px !important; font-size: 11px; color: var(--muted); }

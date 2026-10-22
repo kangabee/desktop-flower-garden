@@ -340,3 +340,19 @@ html[data-view='widget'] body, html[data-view='widget'] #root {
   93% { transform: translateX(-3px); }
   96% { transform: translateX(0); }
 }
+
+/* ── 비료 ── */
+.action-btn.unavailable { opacity: 0.45; }
+.fx-bag {
+  position: absolute;
+  left: 40px;
+  top: 100px;
+  animation: can-tilt 2.4s steps(1) both;
+}
+.fx-grain {
+  position: absolute;
+  top: 132px;
+  opacity: 0;
+  animation: drop-fall 0.6s steps(8) 2;
+}
+.bubble-name { display: inline-flex; align-items: center; gap: 4px; }

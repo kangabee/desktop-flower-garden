@@ -14,6 +14,7 @@ const DEFAULT_STATE = {
   seedQueue: [],
   redeemed: [],
   gardenId: null,
+  fertilizedAt: 0,
 };
 
 function readLocal() {
