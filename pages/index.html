@@ -39,6 +39,8 @@
       .btn.primary { background: #b4e89e; }
       .btn:active { transform: translate(4px, 4px); box-shadow: none; }
       .all { font-size: 12px; color: var(--muted); }
+      .detect { max-width: 360px; margin: 4px auto 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+      .detect:empty { display: none; }
       section {
         margin-top: 36px;
         padding: 16px 18px;
@@ -77,6 +79,7 @@
         <a class="btn" id="mac-intel" data-file="DesktopFlowerGarden-mac-x64.dmg">macOS · Intel 칩</a>
         <a class="btn" id="win" data-file="DesktopFlowerGarden-win-setup.exe">Windows</a>
       </div>
+      <p class="detect" id="detect-note"></p>
       <p class="all"><a id="all-releases">모든 버전 보기</a></p>
 
       <section>
@@ -146,10 +149,53 @@
       });
       document.getElementById('all-releases').href = releases;
 
-      // 방문자 OS에 맞는 버튼을 강조
+      // 방문자 컴퓨터에 맞는 버튼을 초록색으로 강조
+      //  - Windows → Windows 버튼
+      //  - Mac → 칩 종류를 알아내면 그 버튼만, 알 수 없으면 Mac 버튼 둘 다
+      // (브라우저 식별 문자열은 Apple 칩 Mac 에서도 "Intel Mac" 이라고 적혀 있어 칩 구분에 쓸 수 없다)
+      async function detectMacChip() {
+        // 1) Chrome · Edge · Opera: 프로세서 종류를 직접 알려준다
+        try {
+          const info = await navigator.userAgentData?.getHighEntropyValues(['architecture']);
+          if (info?.architecture === 'arm') return 'apple';
+          if (info?.architecture === 'x86') return 'intel';
+        } catch {
+          /* 지원하지 않는 브라우저 */
+        }
+        // 2) Safari · Firefox: 그래픽 칩 이름으로 구분 ("Apple M2" / "Intel Iris" 등).
+        //    Safari 는 보통 "Apple GPU" 로만 알려줘서 구분이 안 되면 모르는 것으로 둔다.
+        try {
+          const gl = document.createElement('canvas').getContext('webgl');
+          const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+          const renderer = String(gl?.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? '');
+          if (/Apple M\d/i.test(renderer)) return 'apple';
+          if (/Intel|AMD|Radeon|NVIDIA/i.test(renderer)) return 'intel';
+        } catch {
+          /* WebGL 사용 불가 */
+        }
+        return null;
+      }
+
+      const highlight = (id) => document.getElementById(id).classList.add('primary');
+      const note = document.getElementById('detect-note');
       const ua = navigator.userAgent;
-      const pick = /Windows/.test(ua) ? 'win' : /Mac/.test(ua) ? 'mac-arm' : null;
-      if (pick) document.getElementById(pick).classList.add('primary');
+      if (/Windows/.test(ua)) {
+        highlight('win');
+      } else if (/Mac/.test(ua)) {
+        detectMacChip().then((chip) => {
+          if (chip === 'apple') {
+            highlight('mac-arm');
+            note.textContent = '이 Mac은 Apple 칩으로 보여요.';
+          } else if (chip === 'intel') {
+            highlight('mac-intel');
+            note.textContent = '이 Mac은 Intel 칩으로 보여요.';
+          } else {
+            highlight('mac-arm');
+            highlight('mac-intel');
+            note.textContent = '칩 종류를 확인하지 못했어요. 화면 왼쪽 위 Apple 메뉴 → 이 Mac에 관하여에서 "칩"이면 Apple, "프로세서"가 Intel이면 Intel을 받아 주세요.';
+          }
+        });
+      }
     </script>
   </body>
 </html>
