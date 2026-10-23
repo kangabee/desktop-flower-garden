@@ -5,8 +5,13 @@ import { StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { decodeCard, renderGiftCard } from './lib/card.js';
 import { FLOWER_BY_ID } from './data/flowers.js';
+import { currentLang, flowerText, t } from './i18n/index.js';
 import './fonts.js';
 import './card-viewer.css';
+
+// 받는 사람의 브라우저 언어로 표시한다
+document.documentElement.lang = currentLang();
+document.title = t('v.pageTitle');
 
 // 앱 설치 파일 주소 (GitHub Releases 등). 앱이 없는 사람에게 안내할 때 쓴다.
 const DOWNLOAD_URL = import.meta.env.VITE_DOWNLOAD_URL;
@@ -23,20 +28,19 @@ function CardPage() {
   if (!card) {
     return (
       <main className="viewer">
-        <p>카드를 열 수 없어요. 링크가 잘렸는지 확인해 주세요.</p>
+        <p>{t('v.cantOpen')}</p>
       </main>
     );
   }
 
   const flower = FLOWER_BY_ID[card.flowerId];
+  const name = flowerText(flower, 'name');
   return (
     <main className="viewer">
-      <p className="viewer-title">
-        🌸 <strong>{card.from || '익명의 정원사'}</strong>님이 {flower.name}을(를) 보냈어요
-      </p>
-      <canvas ref={canvasRef} aria-label={`${flower.name} 선물 카드: ${card.message}`} />
+      <p className="viewer-title">🌸 {t('v.sent', { from: card.from || t('card.fromDefault'), name })}</p>
+      <canvas ref={canvasRef} aria-label={t('v.cardAria', { name, message: card.message })} />
       {card.seedId && <ReceiveSeed payload={hash} />}
-      <p className="viewer-foot">Desktop Flower Garden 에서 하루 동안 천천히 키운 꽃이에요</p>
+      <p className="viewer-foot">{t('v.foot')}</p>
     </main>
   );
 }
@@ -67,16 +71,15 @@ function ReceiveSeed({ payload }) {
   return (
     <section className="receive">
       <button type="button" className="receive-btn" onClick={receive} disabled={state === 'opening'}>
-        {state === 'opening' ? '정원을 여는 중…' : '🌱 씨앗 받기'}
+        {state === 'opening' ? t('v.opening') : t('v.receive')}
       </button>
-      {state === 'sent' && <p className="receive-help">바탕화면의 화분을 확인해 보세요!</p>}
+      {state === 'sent' && <p className="receive-help">{t('v.sentHelp')}</p>}
       {state === 'no-app' && (
         <p className="receive-help">
-          정원이 열리지 않았나요? 브라우저가 앱을 열지 물어보면 <b>허용</b>을 눌러 주세요.
+          {t('v.noApp1')}
           <br />
-          아직 앱이 없다면{' '}
-          {DOWNLOAD_URL ? <a href={DOWNLOAD_URL}>Desktop Flower Garden 설치하기</a> : 'Desktop Flower Garden 을 설치'} 한
-          뒤 이 버튼을 다시 눌러 주세요.
+          {t('v.noApp2')} {DOWNLOAD_URL ? <a href={DOWNLOAD_URL}>{t('v.install')}</a> : t('v.install')}
+          {t('v.noApp3')}
         </p>
       )}
     </section>

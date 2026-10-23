@@ -13,6 +13,8 @@ const DEFAULT_STATE = {
   redeemed: [], // 이미 받은 씨앗 ID (같은 선물 링크로 두 번 받기 방지)
   gardenId: null, // 이 정원(설치)의 숨은 ID
   fertilizedAt: 0, // 마지막으로 비료를 준 시각 (12시간 쿨타임)
+  language: null, // 사용자가 고른 언어 (null = 컴퓨터 언어 따라가기)
+  systemLanguage: null, // 실행할 때마다 컴퓨터 언어로 갱신
 };
 
 class GardenStore {

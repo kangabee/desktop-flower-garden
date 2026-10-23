@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { drawGrid } from '../lib/pixel.js';
 import { FLAGS, flagGrid } from '../data/flags.js';
-import { NATIONS } from '../data/flowers.js';
+import { nationName, t } from '../i18n/index.js';
 
 /** 나라 대표 꽃 옆의 작은 도트 국기 */
 export default function PixelFlag({ code, scale = 1, className }) {
@@ -23,7 +23,7 @@ export default function PixelFlag({ code, scale = 1, className }) {
       height={h}
       style={{ width: w, height: h, imageRendering: 'pixelated', verticalAlign: 'middle' }}
       role="img"
-      aria-label={`${NATIONS[code]} 국기`}
+      aria-label={t('flagOf', { nation: nationName(code) })}
     />
   );
 }

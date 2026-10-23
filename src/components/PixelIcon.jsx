@@ -150,6 +150,27 @@ export const ICONS = {
     rows: ['ab', 'ba'],
     colors: { a: '#7a5236', b: '#a6d96a' },
   },
+  // 전설 꽃의 반짝임 (빛이라서 외곽선 없이)
+  shine: {
+    rows: [
+      '....w....',
+      '....w....',
+      '...wcw...',
+      '..wcccw..',
+      'wwccWccww',
+      '..wcccw..',
+      '...wcw...',
+      '....w....',
+      '....w....',
+    ],
+    colors: { w: '#cfe8ff', c: '#ffffff', W: '#ffffff' },
+    noOutline: true,
+  },
+  shineSmall: {
+    rows: ['..w..', '..c..', 'wcWcw', '..c..', '..w..'],
+    colors: { w: '#fff1b8', c: '#ffffff', W: '#ffffff' },
+    noOutline: true,
+  },
   sparkle: {
     rows: ['.a.', 'awa', '.a.'],
     colors: { a: '#ffd84d', w: '#fff6c2' },
@@ -165,7 +186,7 @@ export default function PixelIcon({ name, scale = 2, className, style }) {
   const grid = useMemo(() => {
     const g = createGrid(w, h);
     stamp(g, icon.rows, 1, 1, icon.colors);
-    return outline(g);
+    return icon.noOutline ? g : outline(g);
   }, [icon, w, h]);
 
   useLayoutEffect(() => {

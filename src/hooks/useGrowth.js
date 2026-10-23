@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { computeGrowth, foldBoost, formatRemaining, resumeBoost } from '../lib/growth.js';
+import { computeGrowth, foldBoost, resumeBoost } from '../lib/growth.js';
+import { flowerText, formatDuration, t } from '../i18n/index.js';
 import {
   FERTILIZER_COOLDOWN_MS,
   FERTILIZER_MS,
@@ -144,10 +145,10 @@ export function useGrowth() {
 
   /** 비료가 지금 가능한지 → { ok, reason } (버튼을 흐리게 할지 정하는 데도 쓴다) */
   const fertilizerState = (() => {
-    if (bloomed) return { ok: false, reason: '이미 활짝 폈어요!' };
-    if (timer.sunOn) return { ok: false, reason: '햇빛이 켜져 있을 땐 비료를 줄 수 없어요' };
+    if (bloomed) return { ok: false, reason: t('w.alreadyBloomed') };
+    if (timer.sunOn) return { ok: false, reason: t('fert.sunOn') };
     const left = FERTILIZER_COOLDOWN_MS - (now - (garden.fertilizedAt ?? 0));
-    if (left > 0) return { ok: false, reason: `비료는 ${formatRemaining(left).replace(' 남음', '')} 뒤에 또 줄 수 있어요` };
+    if (left > 0) return { ok: false, reason: t('fert.wait', { time: formatDuration(left) }) };
     return { ok: true, reason: '' };
   })();
 
@@ -164,7 +165,7 @@ export function useGrowth() {
       },
     }));
     setNow(t);
-    return { ok: true, text: '영양 듬뿍! 1시간 빨리 자라요' };
+    return { ok: true, text: t('fert.done') };
   }, [fertilizerState.ok, fertilizerState.reason]);
 
   /**
@@ -173,10 +174,10 @@ export function useGrowth() {
    */
   const receiveSeed = useCallback((payload) => {
     const card = decodeCard(payload);
-    if (!card?.seedId) return { ok: false, text: '씨앗 정보를 읽을 수 없어요.' };
+    if (!card?.seedId) return { ok: false, text: t('seed.unreadable') };
     const g = getGarden();
-    if (card.gardenId && card.gardenId === g.gardenId) return { ok: false, text: '내가 보낸 씨앗이에요!' };
-    if (g.redeemed?.includes(card.seedId)) return { ok: false, text: '이미 받은 씨앗이에요.' };
+    if (card.gardenId && card.gardenId === g.gardenId) return { ok: false, text: t('seed.mine') };
+    if (g.redeemed?.includes(card.seedId)) return { ok: false, text: t('seed.already') };
 
     const gift = { flowerId: card.flowerId, from: card.from, seedId: card.seedId, fromGarden: card.gardenId };
     // 지금 꽃이 다 피어 있으면 바로 심고, 키우는 중이면 다음 차례로 예약
@@ -186,14 +187,8 @@ export function useGrowth() {
       ...(plantNow ? { timer: createTimer(null, gift) } : { seedQueue: [...(s.seedQueue ?? []), gift] }),
     }));
     setNow(Date.now());
-    const who = card.from ? `${card.from}님의 ` : '';
-    const name = FLOWER_BY_ID[card.flowerId].name;
-    return {
-      ok: true,
-      text: plantNow
-        ? `${who}${name} 씨앗을 화분에 심었어요!`
-        : `${who}${name} 씨앗이 도착했어요! 지금 꽃이 피면 🌱 로 심어요.`,
-    };
+    const vars = { from: card.from, name: flowerText(FLOWER_BY_ID[card.flowerId], 'name') };
+    return { ok: true, text: t(plantNow ? 'seed.planted' : 'seed.queued', vars) };
   }, []);
 
   return {

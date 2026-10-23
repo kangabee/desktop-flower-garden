@@ -5,9 +5,10 @@ import PixelIcon from './components/PixelIcon.jsx';
 import CareEffect from './components/CareEffect.jsx';
 import SunBoost from './components/SunBoost.jsx';
 import PixelFlag from './components/PixelFlag.jsx';
+import Twinkles from './components/Twinkles.jsx';
 import { useGrowth } from './hooks/useGrowth.js';
-import { formatRemaining } from './lib/growth.js';
-import { CARE, WANT } from './lib/care.js';
+import { CARE_KINDS, WANT_ICON } from './lib/care.js';
+import { flowerText, formatRemaining, t, useLang } from './i18n/index.js';
 import { gardenApi, updateGarden } from './lib/garden.js';
 import { RARITY } from './data/flowers.js';
 import { playBloomChime, playSun } from './lib/sound.js';
@@ -24,9 +25,22 @@ const widget = window.widget ?? {
 
 const SWAY_FRAMES = [0, 1, 0, -1];
 
+// 전설 꽃 주변에서 반짝이는 별 자리 (화분을 가운데 둔 200×240 무대 기준 %)
+const LEGEND_STARS = [
+  { x: 26, y: 42, big: true, delay: 0 },
+  { x: 76, y: 38, big: true, delay: 0.8 },
+  { x: 82, y: 62, big: false, delay: 0.4 },
+  { x: 18, y: 64, big: false, delay: 1.6 },
+  { x: 50, y: 26, big: true, delay: 1.2 },
+  { x: 66, y: 78, big: false, delay: 2 },
+  { x: 36, y: 80, big: false, delay: 1 },
+  { x: 62, y: 46, big: false, delay: 1.8 },
+];
+
 export default function App() {
   const { timer, growth, flower, bloomed, plantNewSeed, care, toggleSun, fertilize, fertilizerState, receiveSeed, seedQueue } =
     useGrowth();
+  useLang(); // 언어가 바뀌면 다시 그린다
   const plantRef = useRef(null);
   const [hover, setHover] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -56,7 +70,7 @@ export default function App() {
         if (cmd.type === 'receive-seed') {
           const result = receiveSeed(cmd.payload);
           if (result.ok) playBloomChime();
-          sayRef.current(result.text, '🎁 씨앗 선물', 5000);
+          sayRef.current(result.text, t('w.giftTitle'), 5000);
         }
       }),
     [plantNewSeed, receiveSeed],
@@ -183,7 +197,7 @@ export default function App() {
   sayRef.current = say;
 
   const onSun = () => {
-    if (bloomed) return say('이미 활짝 폈어요!');
+    if (bloomed) return say(t('w.alreadyBloomed'));
     const { on, reaction } = toggleSun();
     if (on) playSun();
     say(reaction);
@@ -201,16 +215,17 @@ export default function App() {
   const onNewSeed = () => {
     plantNewSeed();
     setActionsOpen(false);
-    say(seedQueue.length ? '선물받은 씨앗을 심었어요!' : '새 씨앗을 심었어요. 무슨 꽃일까요?');
+    say(t(seedQueue.length ? 'w.plantedGift' : 'w.plantedNew'));
   };
 
   // 씨앗 단계 제목: 선물 씨앗은 꽃 이름을, 랜덤 씨앗은 희귀도 힌트만
+  const name = flowerText(flower, 'name');
   const seedTitle =
     timer.giftFrom != null
-      ? `${timer.giftFrom ? `${timer.giftFrom}님의 ` : '선물받은 '}${flower.name}`
+      ? t('w.giftedFlower', { from: timer.giftFrom, name })
       : growth.phase.key === 'seed'
-        ? rarity.seedHint
-        : '??? 의 새싹';
+        ? t(`seedHint.${flower.rarity}`)
+        : t('w.unknownSprout');
   const showBubble = hover || burst || reaction;
   const particleColors = [flower.colors.a, flower.colors.b, '#fff6c2'];
 
@@ -219,7 +234,7 @@ export default function App() {
     bubble = (
       <>
         <p className="bubble-title">
-          {reactionTitle ?? (bloomed || timer.giftFrom != null ? flower.name : '??? 의 새싹')}
+          {reactionTitle ?? (bloomed || timer.giftFrom != null ? name : t('w.unknownSprout'))}
         </p>
         <p className="bubble-sub">{reaction}</p>
       </>
@@ -230,17 +245,15 @@ export default function App() {
         <p className="bubble-title">
           <span className="bubble-name">
             {flower.nation && <PixelFlag code={flower.nation} />}
-            {flower.name}
+            {name}
           </span>
           <span className="stars" style={{ color: rarity.color }}>
             {'★'.repeat(rarity.stars)}
           </span>
         </p>
-        <p className="bubble-lang">「{flower.language}」</p>
-        <p className="bubble-sub">{burst && !hover ? '꽃이 피었어요! 도감에 등록됐어요' : flower.message}</p>
-        <p className="bubble-mode">
-          클릭 → 🌱 로 새 씨앗 심기{seedQueue.length ? ` (선물 씨앗 ${seedQueue.length}개 대기)` : ''}
-        </p>
+        <p className="bubble-lang">「{flowerText(flower, 'language')}」</p>
+        <p className="bubble-sub">{burst && !hover ? t('w.bloomedNotice') : flowerText(flower, 'message')}</p>
+        <p className="bubble-mode">{t('w.newSeedHint', { queue: seedQueue.length })}</p>
       </>
     );
   } else {
@@ -254,12 +267,12 @@ export default function App() {
           <div className="pixel-bar-fill" style={{ width: `${growth.progress * 100}%` }} />
         </div>
         <p className="bubble-sub">
-          {growth.phase.label} · {formatRemaining(growth.remainingMs)}
+          {t(`phase.${growth.phase.key}`)} · {formatRemaining(growth.remainingMs)}
         </p>
-        {timer.want && <p className="bubble-want">{WANT[timer.want.kind].text}</p>}
-        {growth.thirsty && <p className="bubble-mode">목이 말라서 햇빛 부스터가 멈췄어요</p>}
+        {timer.want && <p className="bubble-want">{t(`want.${timer.want.kind}`)}</p>}
+        {growth.thirsty && <p className="bubble-mode">{t('w.thirsty')}</p>}
         <p className="bubble-mode">
-          {growth.sunOn ? (growth.thirsty ? '☀ 햇빛 일시정지' : '☀ 햇빛 ×1.1 쑥쑥') : '클릭해서 돌봐주기'}
+          {growth.sunOn ? t(growth.thirsty ? 'w.sunPaused' : 'w.sunBoost') : t('w.clickToCare')}
         </p>
       </>
     );
@@ -274,13 +287,13 @@ export default function App() {
       )}
 
       {actionsOpen && !effect && (
-        <div className="actions interactive" role="toolbar" aria-label="돌봄">
-          {Object.entries(CARE).map(([kind, c]) => (
+        <div className="actions interactive" role="toolbar" aria-label={t('w.careToolbar')}>
+          {CARE_KINDS.map((kind) => (
             <button
               key={kind}
               className="action-btn"
-              title={c.label}
-              aria-label={c.label}
+              title={t(`care.${kind}`)}
+              aria-label={t(`care.${kind}`)}
               onClick={() => doCare(kind)}
             >
               <PixelIcon name={kind === 'song' ? 'note' : kind} />
@@ -288,8 +301,8 @@ export default function App() {
           ))}
           <button
             className={`action-btn${growth.sunOn ? ' active' : ''}`}
-            title={growth.sunOn ? '햇빛 끄기' : '햇빛 켜기 (켜 둔 동안 ×1.1 빨리 자람)'}
-            aria-label={growth.sunOn ? '햇빛 끄기' : '햇빛 켜기'}
+            title={t(growth.sunOn ? 'w.sunOff' : 'w.sunOnTitle')}
+            aria-label={t(growth.sunOn ? 'w.sunOff' : 'w.sunOn')}
             aria-pressed={growth.sunOn}
             onClick={onSun}
           >
@@ -297,8 +310,8 @@ export default function App() {
           </button>
           <button
             className={`action-btn${fertilizerState.ok ? '' : ' unavailable'}`}
-            title={fertilizerState.ok ? '비료 주기 (1시간 빨리, 12시간마다)' : fertilizerState.reason}
-            aria-label="비료 주기"
+            title={fertilizerState.ok ? t('w.fertTitle') : fertilizerState.reason}
+            aria-label={t('w.fert')}
             onClick={onFertilize}
           >
             <PixelIcon name="fertilizer" />
@@ -306,22 +319,22 @@ export default function App() {
           <span className="action-sep" />
           <button
             className="action-btn"
-            title="꽃 도감"
-            aria-label="꽃 도감"
+            title={t('w.collection')}
+            aria-label={t('w.collection')}
             onClick={() => gardenApi.openCollection('collection')}
           >
             <PixelIcon name="book" />
           </button>
           {bloomed && (
-            <button className="action-btn" title="새 씨앗 심기" aria-label="새 씨앗 심기" onClick={onNewSeed}>
+            <button className="action-btn" title={t('w.newSeed')} aria-label={t('w.newSeed')} onClick={onNewSeed}>
               <PixelIcon name="sprout" />
             </button>
           )}
           {bloomed && (
             <button
               className="action-btn"
-              title="이 꽃 선물하기"
-              aria-label="이 꽃 선물하기"
+              title={t('w.giftThis')}
+              aria-label={t('w.giftThis')}
               onClick={() => gardenApi.openCollection(`collection/gift/${uid}`)}
             >
               <PixelIcon name="gift" />
@@ -334,8 +347,17 @@ export default function App() {
       {growth.sunOn && !bloomed && <SunBoost paused={growth.thirsty} />}
       {timer.want && !bloomed && !effect && (
         <div className={`want want-${timer.want.kind}`} aria-hidden="true">
-          <PixelIcon name={WANT[timer.want.kind].icon} scale={2} />
+          <PixelIcon name={WANT_ICON[timer.want.kind]} scale={2} />
         </div>
+      )}
+
+      {bloomed && flower.rarity === 'legendary' && (
+        <>
+          <div className="legend-aura" aria-hidden="true" />
+          <div className="fx">
+            <Twinkles stars={LEGEND_STARS} burst={burst} center={[50, 56]} />
+          </div>
+        </>
       )}
 
       <div className="stage">
@@ -350,7 +372,7 @@ export default function App() {
           <PixelParticles
             key={burst ? 'burst' : 'idle'}
             colors={flower.rarity === 'legendary' ? ['#fff6c2', '#ffe27a', flower.colors.a] : particleColors}
-            count={burst ? 14 : flower.rarity === 'legendary' ? 8 : 4}
+            count={burst ? 14 : 4}
             burst={burst}
           />
         )}

@@ -2,9 +2,15 @@
   --ink: #2b1b22;
   --paper: #fffaf2;
   --muted: #8a6f6f;
-  font-family: 'Galmuri11', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  /* 도트 글꼴 순서는 i18n/index.js 의 fontStack 과 같게 유지 */
+  font-family: 'Galmuri11', 'Galmuri11 Fallback', 'Fusion Pixel SC', 'Apple SD Gothic Neo', 'Hiragino Sans', 'PingFang SC', 'Malgun Gothic', 'Microsoft YaHei', sans-serif;
   color: var(--ink);
   -webkit-font-smoothing: none;
+}
+
+/* 중국어 화면: 중국어 도트 글꼴을 먼저 */
+html[lang='zh'] {
+  font-family: 'Fusion Pixel SC', 'Galmuri11', 'Galmuri11 Fallback', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -356,3 +362,41 @@ html[data-view='widget'] body, html[data-view='widget'] #root {
   animation: drop-fall 0.6s steps(8) 2;
 }
 .bubble-name { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ── 전설 꽃 반짝임 (위젯·도감 공용) ── */
+.twinkles { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.twinkle,
+.shine-burst {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(0);
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 6px rgba(160, 205, 255, 0.8));
+}
+.twinkle { animation: twinkle 2.4s steps(8) infinite; }
+@keyframes twinkle {
+  0%, 92%, 100% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  45% { transform: translate(-50%, -50%) scale(1.2) rotate(45deg); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(0.8) rotate(90deg); opacity: 0.9; }
+}
+.shine-burst { animation: shine-burst 1.5s steps(10) 1 both; }
+@keyframes shine-burst {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+  40% { transform: translate(calc(-50% + var(--dx) * 0.7), calc(-50% + var(--dy) * 0.7)) scale(1.1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
+}
+/* 전설 꽃 뒤의 은은한 빛무리 */
+.legend-aura {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 200px;
+  height: 240px;
+  margin-left: -100px;
+  pointer-events: none;
+  background: radial-gradient(circle closest-side at 50% 58%, rgba(255, 244, 196, 0.42), rgba(190, 220, 255, 0.16) 60%, transparent);
+  animation: glow-pulse 3s steps(4) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .twinkle { animation-duration: 6s; }
+  .shine-burst { animation: none; opacity: 0; }
+}

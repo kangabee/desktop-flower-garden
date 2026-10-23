@@ -5,31 +5,14 @@
 //  - 바람(want): 꽃이 가끔 물·햇빛·음악을 원한다. 원하는 걸 해주면 쿨타임 없이 +2%.
 //    햇빛을 켜 두면 흙이 빨리 말라 물을 더 자주 원하고, 물을 줄 때까지 부스터가 멈춘다.
 import { GOAL_MS } from './growth.js';
+import { t } from '../i18n/index.js';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 
-export const CARE = {
-  song: {
-    label: '노래 들려주기',
-    reactions: ['♪ 흥얼흥얼~', '이 노래 좋아요!', '잎사귀가 춤춰요', '박자에 맞춰 살랑살랑'],
-  },
-  water: {
-    label: '물 주기',
-    reactions: ['시원해요!', '꿀꺽꿀꺽~', '뿌리까지 촉촉해요', '목말랐는데 고마워요'],
-  },
-};
-
-export const SUN = {
-  on: ['따뜻해요~ (×1.1 쑥쑥)', '햇살 켜짐! 광합성 시작', '해가 드니까 힘이 나요'],
-  off: ['햇빛 끔 · 잠깐 쉬어갈게요', '그늘도 좋아요'],
-};
-
-export const WANT = {
-  water: { icon: 'water', text: '이 꽃은 물을 원하는 것 같아요', thanks: '딱 물이 필요했어요! (+2%)' },
-  sun: { icon: 'sun', text: '이 꽃은 햇빛을 원하는 것 같아요', thanks: '기다리던 햇살이에요! (+2%)' },
-  song: { icon: 'note', text: '이 꽃은 음악을 원하는 것 같아요', thanks: '듣고 싶던 노래예요! (+2%)' },
-};
+// 문구는 i18n/messages.js 의 care.* · sun.* · want.* 키
+export const CARE_KINDS = ['song', 'water'];
+export const WANT_ICON = { water: 'water', sun: 'sun', song: 'note' };
 
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const BONUS_RATIO = 0.01;
@@ -70,16 +53,16 @@ export function applyCare(timer, kind, bloomed, now = Date.now()) {
   const counted = { ...timer, care: { ...timer.care, [kind]: (timer.care?.[kind] ?? 0) + 1 } };
 
   if (!bloomed && timer.want?.kind === kind) {
-    return { timer: fulfil(counted, now), reaction: WANT[kind].thanks };
+    return { timer: fulfil(counted, now), reaction: t(`want.${kind}.thanks`) };
   }
 
   const last = timer.lastCare?.[kind] ?? 0;
   const gained = !bloomed && now - last >= CARE_COOLDOWN_MS;
   const reaction = gained
-    ? `${pick(CARE[kind].reactions)} (+1%)`
+    ? `${pick(t(`care.${kind}.reactions`))} (+1%)`
     : bloomed
-      ? pick(CARE[kind].reactions)
-      : '아까 받았어요, 고마워요!';
+      ? pick(t(`care.${kind}.reactions`))
+      : t('care.again');
 
   return {
     reaction,
@@ -93,8 +76,8 @@ export function applyCare(timer, kind, bloomed, now = Date.now()) {
 
 /** 햇빛 켜기/끄기 (부스터 적립은 호출하는 쪽에서 foldBoost/resumeBoost 로 감싼다) */
 export function applySun(timer, now = Date.now()) {
-  if (timer.sunOn) return { timer: { ...timer, sunOn: false }, on: false, reaction: pick(SUN.off) };
+  if (timer.sunOn) return { timer: { ...timer, sunOn: false }, on: false, reaction: pick(t('sun.off')) };
   const lit = { ...timer, sunOn: true, care: { ...timer.care, sun: (timer.care?.sun ?? 0) + 1 } };
-  if (timer.want?.kind === 'sun') return { timer: fulfil(lit, now), on: true, reaction: WANT.sun.thanks };
-  return { timer: lit, on: true, reaction: pick(SUN.on) };
+  if (timer.want?.kind === 'sun') return { timer: fulfil(lit, now), on: true, reaction: t('want.sun.thanks') };
+  return { timer: lit, on: true, reaction: pick(t('sun.on')) };
 }

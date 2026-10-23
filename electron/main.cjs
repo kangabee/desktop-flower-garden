@@ -18,6 +18,7 @@ const {
 } = require('electron');
 const path = require('node:path');
 const { GardenStore } = require('./store.cjs');
+const { LANG_IDS, LANG_NAMES, MENU, normalizeLang, detectSystemLanguage } = require('./i18n.cjs');
 
 const isDev = process.argv.includes('--dev');
 const DEV_URL = 'http://localhost:5173';
@@ -161,7 +162,7 @@ function openCollection(route = 'collection') {
     height: 560,
     minWidth: 600,
     minHeight: 480,
-    title: '꽃 도감 · Desktop Flower Garden',
+    title: m('collectionTitle'),
     backgroundColor: '#fdf6ec',
     autoHideMenuBar: true,
     webPreferences: {
@@ -193,17 +194,32 @@ function broadcast(state, except) {
   }
 }
 
+/** 사용자가 고른 언어 → 없으면 컴퓨터 언어 */
+function menuLang() {
+  const state = store?.get() ?? {};
+  return normalizeLang(state.language) ?? normalizeLang(state.systemLanguage) ?? 'en';
+}
+const m = (key) => MENU[menuLang()][key];
+
+/** 언어 바꾸기 (null = 자동) → 모든 창과 메뉴에 반영 */
+function setLanguage(language) {
+  broadcast(store.merge({ language }));
+  refreshTray();
+  collectionWin?.setTitle(m('collectionTitle'));
+}
+
 function buildMenu() {
+  const chosen = normalizeLang(store?.get().language);
   return Menu.buildFromTemplate([
-    { label: '📖 꽃 도감 열기', click: () => openCollection() },
+    { label: m('openCollection'), click: () => openCollection() },
     {
-      label: '🌱 새 씨앗 심기',
+      label: m('newSeed'),
       enabled: plantState.bloomed,
       click: () => send({ type: 'new-seed' }),
     },
     { type: 'separator' },
     {
-      label: '항상 위에 표시',
+      label: m('alwaysOnTop'),
       type: 'checkbox',
       checked: pinned,
       click: (item) => {
@@ -213,7 +229,7 @@ function buildMenu() {
       },
     },
     {
-      label: '화면 우측 하단으로 되돌리기',
+      label: m('resetPosition'),
       click: () => {
         const { x, y } = defaultPosition();
         win?.setPosition(x, y);
@@ -221,7 +237,7 @@ function buildMenu() {
       },
     },
     {
-      label: '로그인 시 자동으로 정원 열기',
+      label: m('launchAtLogin'),
       type: 'checkbox',
       // 개발 모드(npm run dev)에서는 Electron 자체가 등록되므로 설치된 앱에서만 허용
       enabled: app.isPackaged,
@@ -231,8 +247,21 @@ function buildMenu() {
         refreshTray();
       },
     },
+    {
+      label: m('language'),
+      submenu: [
+        { label: m('languageAuto'), type: 'radio', checked: !chosen, click: () => setLanguage(null) },
+        { type: 'separator' },
+        ...LANG_IDS.map((id) => ({
+          label: LANG_NAMES[id],
+          type: 'radio',
+          checked: chosen === id,
+          click: () => setLanguage(id),
+        })),
+      ],
+    },
     { type: 'separator' },
-    { label: '정원 닫기', click: () => app.quit() },
+    { label: m('quit'), click: () => app.quit() },
   ]);
 }
 
@@ -328,6 +357,8 @@ ipcMain.on('shell:open-external', (_event, url) => {
 app.whenReady().then(() => {
   if (!gotLock) return;
   store = new GardenStore(app.getPath('userData'));
+  // 화면(렌더러)도 같은 값을 쓰도록 컴퓨터 언어를 저장해 둔다
+  store.merge({ systemLanguage: detectSystemLanguage(app) });
   const firstRun = !store.get().timer;
 
   // macOS: Dock 아이콘 숨김 → 앱이 아니라 바탕화면 소품처럼 보이게

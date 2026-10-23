@@ -15,6 +15,8 @@ const DEFAULT_STATE = {
   redeemed: [],
   gardenId: null,
   fertilizedAt: 0,
+  language: null, // 사용자가 고른 언어 (null = 자동)
+  systemLanguage: null, // 메인 프로세스가 알려준 컴퓨터 언어
 };
 
 function readLocal() {
@@ -93,11 +95,11 @@ export function updateGarden(patchOrFn) {
   emit();
 }
 
-function subscribe(fn) {
+export function subscribeGarden(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
 
 export function useGarden() {
-  return useSyncExternalStore(subscribe, getGarden);
+  return useSyncExternalStore(subscribeGarden, getGarden);
 }

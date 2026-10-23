@@ -1,6 +1,6 @@
 {
   "name": "desktop-flower-garden",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "데스크탑 구석에서 조용히 꽃을 피우는 미니 정원 위젯",
   "main": "electron/main.cjs",
@@ -15,6 +15,7 @@
     "dist": "vite build && electron-builder --mac --win"
   },
   "devDependencies": {
+    "@fontsource/fusion-pixel-12px-proportional-sc": "^5.3.0",
     "@vitejs/plugin-react": "^5.0.0",
     "concurrently": "^9.2.0",
     "electron": "^37.2.0",
@@ -71,7 +72,8 @@
         {
           "target": "nsis",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         }
       ],

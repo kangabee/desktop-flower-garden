@@ -1,15 +1,14 @@
 // 성장 계산 모듈 — 순수 함수만 둔다 (UI/저장소와 분리).
 
 const HOUR = 60 * 60 * 1000;
-const MINUTE = 60 * 1000;
 
-// 성장 단계: `at` = 해당 단계가 시작되는 진행률(0~1)
+// 성장 단계: `at` = 해당 단계가 시작되는 진행률(0~1). 이름은 i18n 의 phase.<key>
 export const PHASES = [
-  { id: 0, key: 'seed', label: '씨앗', at: 0 },
-  { id: 1, key: 'sprout', label: '새싹', at: 0.05 }, // 씨앗 단계는 짧게 (약 1시간)
-  { id: 2, key: 'stem', label: '줄기와 잎', at: 0.35 },
-  { id: 3, key: 'bud', label: '꽃봉오리', at: 0.7 },
-  { id: 4, key: 'bloom', label: '만개', at: 1 },
+  { id: 0, key: 'seed', at: 0 },
+  { id: 1, key: 'sprout', at: 0.05 }, // 씨앗 단계는 짧게 (약 1시간)
+  { id: 2, key: 'stem', at: 0.35 },
+  { id: 3, key: 'bud', at: 0.7 },
+  { id: 4, key: 'bloom', at: 1 },
 ];
 
 /** 꽃 한 송이가 피기까지: 실제 시간 24시간 (앱을 켜 두든 꺼 두든 흘러간다) */
@@ -73,16 +72,4 @@ export function computeGrowth(timer, now = Date.now()) {
     sunOn: Boolean(timer.sunOn),
     thirsty: Boolean(timer.sunOn) && timer.want?.kind === 'water',
   };
-}
-
-export function formatRemaining(ms) {
-  if (ms <= 0) return '활짝 피었어요';
-  const totalMin = Math.ceil(ms / MINUTE);
-  if (totalMin < 1) return '곧 피어나요';
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  if (h === 0) {
-    return ms < MINUTE ? `${Math.ceil(ms / 1000)}초 남음` : `${m}분 남음`;
-  }
-  return m === 0 ? `${h}시간 남음` : `${h}시간 ${m}분 남음`;
 }

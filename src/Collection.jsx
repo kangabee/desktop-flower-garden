@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import PixelPlant from './components/PixelPlant.jsx';
 import PixelIcon from './components/PixelIcon.jsx';
 import PixelFlag from './components/PixelFlag.jsx';
+import Twinkles from './components/Twinkles.jsx';
 import GiftEditor from './GiftEditor.jsx';
-import { FLOWERS, FLOWER_BY_ID, NATIONS, RARITY, REGIONS } from './data/flowers.js';
+import { FLOWERS, FLOWER_BY_ID, RARITY, REGIONS } from './data/flowers.js';
+import { flowerText, formatDuration, nationName, regionName, t, useLang } from './i18n/index.js';
 import { gardenApi, useGarden } from './lib/garden.js';
 import { formatDate } from './lib/card.js';
 import './collection.css';
@@ -15,7 +17,19 @@ function parseRoute(hash) {
 }
 
 const REGION_KEY = 'dfg.collection.region';
-const REGION_LABEL = Object.fromEntries(REGIONS.map((r) => [r.id, r.label]));
+
+// 전설 꽃 반짝임 자리 (상자 기준 %)
+const SLOT_STARS = [
+  { x: 22, y: 24, big: false, delay: 0 },
+  { x: 80, y: 34, big: false, delay: 0.8 },
+  { x: 70, y: 66, big: false, delay: 1.6 },
+];
+const HERO_STARS = [
+  { x: 24, y: 22, big: true, delay: 0 },
+  { x: 78, y: 30, big: false, delay: 0.7 },
+  { x: 82, y: 70, big: true, delay: 1.4 },
+  { x: 20, y: 74, big: false, delay: 2 },
+];
 
 function loadRegion() {
   try {
@@ -25,16 +39,9 @@ function loadRegion() {
   }
 }
 
-function formatDuration(ms) {
-  const totalMin = Math.max(1, Math.round(ms / 60000));
-  const d = Math.floor(totalMin / 1440);
-  const h = Math.floor((totalMin % 1440) / 60);
-  const m = totalMin % 60;
-  return [d && `${d}일`, h && `${h}시간`, !d && m && `${m}분`].filter(Boolean).join(' ');
-}
-
 export default function Collection() {
   const { collection } = useGarden();
+  const lang = useLang();
   const [route, setRoute] = useState(() => parseRoute(location.hash));
   // 대륙별 도감 탭 (마지막으로 보던 탭을 기억)
   const [region, setRegionState] = useState(loadRegion);
@@ -75,9 +82,9 @@ export default function Collection() {
       <GiftEditor entry={entry} onBack={() => go(`collection/flower/${entry.flowerId}`)} />
     ) : (
       <div className="book">
-        <p className="empty">이 꽃을 도감에서 찾을 수 없어요.</p>
+        <p className="empty">{t('c.notFound')}</p>
         <button className="px-btn" onClick={() => go('collection')}>
-          도감으로
+          {t('c.back')}
         </button>
       </div>
     );
@@ -86,7 +93,7 @@ export default function Collection() {
   const discovered = Object.keys(bySpecies).length;
   const shown = region === 'all' ? FLOWERS : FLOWERS.filter((f) => f.region === region);
   const selected = FLOWER_BY_ID[route.id] ?? shown.find((f) => bySpecies[f.id]) ?? null;
-  const tabs = [{ id: 'all', label: '전체' }, ...REGIONS].map((r) => {
+  const tabs = [{ id: 'all', label: t('c.all') }, ...REGIONS.map((r) => ({ ...r, label: regionName(r.id) }))].map((r) => {
     const list = r.id === 'all' ? FLOWERS : FLOWERS.filter((f) => f.region === r.id);
     return { ...r, total: list.length, found: list.filter((f) => bySpecies[f.id]).length };
   });
@@ -95,14 +102,12 @@ export default function Collection() {
     <div className="book">
       <header className="book-header">
         <h1>
-          <PixelIcon name="book" scale={3} /> 꽃 도감
+          <PixelIcon name="book" scale={3} /> {t('c.title')}
         </h1>
-        <p>
-          발견 <strong>{discovered}</strong> / {FLOWERS.length} 종 · 피운 꽃 <strong>{collection.length}</strong> 송이
-        </p>
+        <p>{t('c.summary', { found: discovered, total: FLOWERS.length, bloomed: collection.length })}</p>
       </header>
 
-      <nav className="region-tabs" aria-label="대륙별 도감">
+      <nav className="region-tabs" aria-label={t('c.regionNav')}>
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -125,14 +130,17 @@ export default function Collection() {
             return (
               <li key={f.id}>
                 <button
-                  className={`slot${owned ? '' : ' locked'}${selected?.id === f.id ? ' selected' : ''}`}
+                  className={`slot${owned ? '' : ' locked'}${selected?.id === f.id ? ' selected' : ''}${
+                    owned && f.rarity === 'legendary' ? ' shiny' : ''
+                  }`}
                   onClick={() => owned && go(`collection/flower/${f.id}`)}
                   disabled={!owned}
-                  aria-label={owned ? f.name : '아직 만나지 못한 꽃'}
+                  aria-label={owned ? flowerText(f, 'name') : t('c.unknown')}
                 >
                   {f.nation && <PixelFlag code={f.nation} className="slot-flag" />}
+                  {owned && f.rarity === 'legendary' && <Twinkles stars={SLOT_STARS} />}
                   <PixelPlant flower={f} progress={1} scale={2} silhouette={owned ? null : '#d9cdbf'} />
-                  <span className="slot-name">{owned ? f.name : '???'}</span>
+                  <span className="slot-name">{owned ? flowerText(f, 'name') : '???'}</span>
                   {owned && (
                     <span className="slot-stars" style={{ color: RARITY[f.rarity].color }}>
                       {'★'.repeat(RARITY[f.rarity].stars)}
@@ -147,16 +155,21 @@ export default function Collection() {
 
         <aside className="detail">
           {selected ? (
-            <FlowerDetail flower={selected} entries={bySpecies[selected.id]} onGift={(uid) => go(`collection/gift/${uid}`)} />
+            <FlowerDetail
+              flower={selected}
+              entries={bySpecies[selected.id]}
+              lang={lang}
+              onGift={(uid) => go(`collection/gift/${uid}`)}
+            />
           ) : (
             <div className="empty">
               <PixelIcon name="water" scale={4} />
               <p>
-                <strong>화면 오른쪽 아래에 화분이 생겼어요!</strong>
+                <strong>{t('c.welcome1')}</strong>
               </p>
-              <p>화분을 클릭하면 물·햇빛·노래·비료로 돌봐줄 수 있고,</p>
-              <p>우클릭하면 설정 메뉴가 열려요.</p>
-              <p>씨앗은 24시간 동안 천천히 자라고, 꽃이 피면 이 도감에 모여요.</p>
+              <p>{t('c.welcome2')}</p>
+              <p>{t('c.welcome3')}</p>
+              <p>{t('c.welcome4')}</p>
             </div>
           )}
         </aside>
@@ -165,42 +178,49 @@ export default function Collection() {
   );
 }
 
-function FlowerDetail({ flower, entries, onGift }) {
+function FlowerDetail({ flower, entries, lang, onGift }) {
   const rarity = RARITY[flower.rarity];
+  const origin = flowerText(flower, 'origin');
   return (
     <>
       <div className="detail-hero" style={{ '--tint': flower.colors.a }}>
         <PixelPlant flower={flower} progress={1} scale={4} />
+        {/* 전설 꽃: 상세를 열 때마다 한 번 터지고 계속 반짝인다 */}
+        {flower.rarity === 'legendary' && <Twinkles key={flower.id} stars={HERO_STARS} burst center={[50, 34]} />}
       </div>
       <h2>
-        {flower.name} <small>{flower.nameEn}</small>
+        {/* 작은 글씨: 영어 화면에서는 한국어 원래 이름, 그 밖에는 영어 이름 */}
+        {flowerText(flower, 'name')} <small>{lang === 'en' ? flower.name : flower.nameEn}</small>
       </h2>
       <p className="rarity" style={{ color: rarity.color }}>
-        {'★'.repeat(rarity.stars)} {rarity.label} · {rarity.ko}
+        {'★'.repeat(rarity.stars)} {rarity.label}
+        {lang === 'en' ? '' : ` · ${t(`rarity.${flower.rarity}`)}`}
       </p>
       <p className="where">
         {flower.nation ? (
           <>
-            <PixelFlag code={flower.nation} /> {NATIONS[flower.nation]}의 나라꽃
+            <PixelFlag code={flower.nation} /> {t('national', { nation: nationName(flower.nation) })}
           </>
         ) : (
-          (flower.origin ?? REGION_LABEL[flower.region])
+          (origin ?? regionName(flower.region))
         )}
-        {flower.nation || flower.origin ? ` · ${REGION_LABEL[flower.region]}` : ''}
+        {flower.nation || origin ? ` · ${regionName(flower.region)}` : ''}
       </p>
-      <p className="lang">꽃말 「{flower.language}」</p>
-      <p className="msg">“{flower.message}”</p>
+      <p className="lang">
+        {t('flowerLanguage')} 「{flowerText(flower, 'language')}」
+      </p>
+      <p className="msg">“{flowerText(flower, 'message')}”</p>
 
-      <h3>키운 기록</h3>
+      <h3>{t('c.records')}</h3>
       <ol className="records">
         {[...entries].reverse().map((e) => (
           <li key={e.uid}>
             <div>
-              <strong>{formatDate(e.bloomedAt)}</strong> 개화
-              {e.giftFrom != null && <span className="gift-tag">🎁 {e.giftFrom || '선물'}</span>}
+              <strong>{t('c.bloomedOn', { date: formatDate(e.bloomedAt) })}</strong>
+              {e.giftFrom != null && <span className="gift-tag">🎁 {e.giftFrom || t('c.giftTag')}</span>}
               <span className="muted">
                 {' '}
-                · {formatDuration(e.bloomedAt - e.startedAt)} 만에
+                · {t('c.took', { time: formatDuration(e.bloomedAt - e.startedAt) })}
               </span>
               <div className="care-counts">
                 <PixelIcon name="note" scale={1} /> {e.care?.song ?? 0}
@@ -210,7 +230,7 @@ function FlowerDetail({ flower, entries, onGift }) {
               </div>
             </div>
             <button className="px-btn gift-btn" onClick={() => onGift(e.uid)}>
-              <PixelIcon name="gift" scale={2} /> 선물하기
+              <PixelIcon name="gift" scale={2} /> {t('c.gift')}
             </button>
           </li>
         ))}
