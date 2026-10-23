@@ -146,6 +146,11 @@ const ko = {
   'v.noApp2': '아직 앱이 없다면',
   'v.install': 'Desktop Flower Garden 설치하기',
   'v.noApp3': '후 이 버튼을 다시 눌러 주세요.',
+
+  // 업데이트
+  'upd.title': '✨ 새 버전',
+  'upd.available': ({ version }) => `v${version}이 나왔어요! 우클릭 메뉴에서 받을 수 있어요.`,
+  'upd.ready': ({ version }) => `v${version}을 받아 두었어요. 다시 시작하면 적용돼요.`,
 };
 
 const en = {
@@ -285,6 +290,10 @@ const en = {
   'v.noApp2': "Don't have the app yet?",
   'v.install': 'Install Desktop Flower Garden',
   'v.noApp3': ', then tap this button again.',
+
+  'upd.title': '✨ New version',
+  'upd.available': ({ version }) => `v${version} is out! Get it from the right-click menu.`,
+  'upd.ready': ({ version }) => `v${version} is downloaded. It applies when you restart.`,
 };
 
 const ja = {
@@ -424,6 +433,10 @@ const ja = {
   'v.noApp2': 'まだアプリがない場合は',
   'v.install': 'Desktop Flower Garden をインストール',
   'v.noApp3': 'してから、もう一度このボタンを押してください。',
+
+  'upd.title': '✨ 新しいバージョン',
+  'upd.available': ({ version }) => `v${version} が出ました！右クリックメニューからダウンロードできます。`,
+  'upd.ready': ({ version }) => `v${version} をダウンロードしました。再起動すると適用されます。`,
 };
 
 const zh = {
@@ -563,6 +576,10 @@ const zh = {
   'v.noApp2': '如果还没有安装应用，请先',
   'v.install': '安装 Desktop Flower Garden',
   'v.noApp3': '，然后再点一次这个按钮。',
+
+  'upd.title': '✨ 新版本',
+  'upd.available': ({ version }) => `v${version} 发布啦！可以在右键菜单中下载。`,
+  'upd.ready': ({ version }) => `已下载 v${version}，重启后生效。`,
 };
 
 export const MESSAGES = { ko, en, ja, zh };

@@ -20,7 +20,11 @@ jobs:
             files: release/*.dmg
           - os: windows-latest
             target: --win
-            files: release/*.exe
+            # latest.yml · blockmap: Windows 자동 업데이트(electron-updater)가 읽는 버전 정보
+            files: |
+              release/*.exe
+              release/latest.yml
+              release/*.exe.blockmap
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

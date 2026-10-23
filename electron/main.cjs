@@ -19,6 +19,7 @@ const {
 const path = require('node:path');
 const { GardenStore } = require('./store.cjs');
 const { LANG_IDS, LANG_NAMES, MENU, normalizeLang, detectSystemLanguage } = require('./i18n.cjs');
+const { DOWNLOAD_PAGE, checkForNewVersion } = require('./updates.cjs');
 
 const isDev = process.argv.includes('--dev');
 const DEV_URL = 'http://localhost:5173';
@@ -34,8 +35,11 @@ let pinned = true;
 // 렌더러가 보내주는 현재 상태 (메뉴 구성용)
 let plantState = { bloomed: false };
 // 선물 링크의 "씨앗 받기"로 들어온 씨앗 (위젯이 준비되면 전달)
-const pendingSeeds = [];
+// 위젯이 아직 준비되지 않았을 때 보낼 명령 (선물 씨앗·업데이트 알림)
+const pendingCommands = [];
 let widgetReady = false;
+// 업데이트 상태: available = Mac 새 버전 알림, ready = Windows 에서 받아 둔 새 버전
+const update = { available: null, ready: null };
 
 // 선물 카드 페이지의 "씨앗 받기" 버튼이 여는 앱 링크: flowergarden://seed?d=<카드 데이터>
 const PROTOCOL = 'flowergarden';
@@ -49,8 +53,7 @@ if (process.defaultApp && process.argv.length >= 2) {
 function handleSeedLink(url) {
   const match = /^flowergarden:\/\/seed\/?\?d=([A-Za-z0-9_-]{1,4000})/.exec(String(url));
   if (!match) return;
-  if (widgetReady) send({ type: 'receive-seed', payload: match[1] });
-  else pendingSeeds.push(match[1]);
+  sendToWidget({ type: 'receive-seed', payload: match[1] });
 }
 const seedLinkIn = (argv) => argv.find((arg) => arg.startsWith(`${PROTOCOL}://`));
 
@@ -184,6 +187,63 @@ function applyPinned() {
   win.setAlwaysOnTop(pinned, 'screen-saver');
 }
 
+function sendToWidget(command) {
+  if (widgetReady) send(command);
+  else pendingCommands.push(command);
+}
+
+// ── 업데이트 ──
+const HOUR = 60 * 60 * 1000;
+
+/** 새 버전 소식을 메뉴에 반영하고, 버전마다 한 번만 말풍선으로 알린다 */
+function announceUpdate() {
+  refreshTray();
+  const version = update.ready ?? update.available;
+  if (store.get().notifiedVersion === version) return;
+  store.merge({ notifiedVersion: version });
+  sendToWidget({ type: update.ready ? 'update-ready' : 'update-available', version });
+}
+
+function startUpdateChecks() {
+  // 개발 중에는 꺼 두고, --update-test 로만 확인 (현재 버전을 0.0.1 로 간주)
+  const test = process.argv.includes('--update-test');
+  if (!app.isPackaged && !test) return;
+  const current = test ? '0.0.1' : app.getVersion();
+
+  if (process.platform === 'win32' && app.isPackaged) {
+    // Windows: 백그라운드로 받아 두었다가, 앱을 끌 때 또는 메뉴에서 "다시 시작" 할 때 적용
+    const { autoUpdater } = require('electron-updater');
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.on('update-downloaded', (info) => {
+      update.ready = info.version;
+      announceUpdate();
+    });
+    autoUpdater.on('error', () => {}); // 오프라인 등은 다음 확인 때 다시
+    const run = () => autoUpdater.checkForUpdates().catch(() => {});
+    run();
+    setInterval(run, 6 * HOUR);
+    return;
+  }
+
+  // Mac (그리고 예외 상황): 새 버전이 있으면 알려 주고 다운로드 페이지로 안내
+  const run = async () => {
+    const version = await checkForNewVersion(current);
+    if (version && version !== update.available) {
+      update.available = version;
+      announceUpdate();
+    }
+  };
+  run();
+  setInterval(run, 24 * HOUR);
+}
+
+function installUpdateNow() {
+  const { autoUpdater } = require('electron-updater');
+  store.flush();
+  autoUpdater.quitAndInstall();
+}
+
 function send(command) {
   win?.webContents.send('widget:command', command);
 }
@@ -210,7 +270,16 @@ function setLanguage(language) {
 
 function buildMenu() {
   const chosen = normalizeLang(store?.get().language);
+  const updateItems = update.ready
+    ? [{ label: m('updateReady').replace('{v}', update.ready), click: installUpdateNow }, { type: 'separator' }]
+    : update.available
+      ? [
+          { label: m('updateAvailable').replace('{v}', update.available), click: () => shell.openExternal(DOWNLOAD_PAGE) },
+          { type: 'separator' },
+        ]
+      : [];
   return Menu.buildFromTemplate([
+    ...updateItems,
     { label: m('openCollection'), click: () => openCollection() },
     {
       label: m('newSeed'),
@@ -329,7 +398,7 @@ ipcMain.on('widget:set-position', (_event, x, y) => {
 ipcMain.on('widget:state', (_event, state) => {
   if (!widgetReady) {
     widgetReady = true;
-    for (const payload of pendingSeeds.splice(0)) send({ type: 'receive-seed', payload });
+    for (const command of pendingCommands.splice(0)) send(command);
   }
   plantState = { ...plantState, ...state };
   refreshTray();
@@ -371,6 +440,7 @@ app.whenReady().then(() => {
   createWidgetWindow();
   // 처음 설치한 사람에게: 도감 창이 사용법 안내를 겸한다 (Dock 아이콘이 없어 실행됐는지 헷갈리지 않게)
   if (firstRun) openCollection();
+  startUpdateChecks();
 });
 
 // 도감 창만 닫혔을 때는 위젯은 계속 살아 있어야 한다

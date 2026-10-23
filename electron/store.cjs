@@ -15,6 +15,7 @@ const DEFAULT_STATE = {
   fertilizedAt: 0, // 마지막으로 비료를 준 시각 (12시간 쿨타임)
   language: null, // 사용자가 고른 언어 (null = 컴퓨터 언어 따라가기)
   systemLanguage: null, // 실행할 때마다 컴퓨터 언어로 갱신
+  notifiedVersion: null, // 말풍선으로 이미 알린 새 버전 (같은 버전은 한 번만 알림)
 };
 
 class GardenStore {

@@ -13,6 +13,8 @@ const MENU = {
     languageAuto: '자동 (컴퓨터 언어)',
     quit: '정원 닫기',
     collectionTitle: '꽃 도감 · Desktop Flower Garden',
+    updateAvailable: '✨ 새 버전 v{v} 받기',
+    updateReady: '✨ 다시 시작해서 v{v}로 업데이트',
   },
   en: {
     openCollection: '📖 Open collection',
@@ -24,6 +26,8 @@ const MENU = {
     languageAuto: 'Automatic (system language)',
     quit: 'Close garden',
     collectionTitle: 'Flower Collection · Desktop Flower Garden',
+    updateAvailable: '✨ Get the new version v{v}',
+    updateReady: '✨ Restart to update to v{v}',
   },
   ja: {
     openCollection: '📖 花図鑑を開く',
@@ -35,6 +39,8 @@ const MENU = {
     languageAuto: '自動（コンピューターの言語）',
     quit: '庭を閉じる',
     collectionTitle: '花図鑑 · Desktop Flower Garden',
+    updateAvailable: '✨ 新しいバージョン v{v} をダウンロード',
+    updateReady: '✨ 再起動して v{v} にアップデート',
   },
   zh: {
     openCollection: '📖 打开花卉图鉴',
@@ -46,6 +52,8 @@ const MENU = {
     languageAuto: '自动（跟随系统语言）',
     quit: '关闭花园',
     collectionTitle: '花卉图鉴 · Desktop Flower Garden',
+    updateAvailable: '✨ 下载新版本 v{v}',
+    updateReady: '✨ 重启并更新到 v{v}',
   },
 };
 

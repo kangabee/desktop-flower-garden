@@ -67,6 +67,10 @@ export default function App() {
     () =>
       widget.onCommand((cmd) => {
         if (cmd.type === 'new-seed') plantNewSeed();
+        if (cmd.type === 'update-available' || cmd.type === 'update-ready') {
+          const key = cmd.type === 'update-ready' ? 'upd.ready' : 'upd.available';
+          sayRef.current(t(key, { version: cmd.version }), t('upd.title'), 8000);
+        }
         if (cmd.type === 'receive-seed') {
           const result = receiveSeed(cmd.payload);
           if (result.ok) playBloomChime();

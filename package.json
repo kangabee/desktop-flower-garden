@@ -1,6 +1,6 @@
 {
   "name": "desktop-flower-garden",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "데스크탑 구석에서 조용히 꽃을 피우는 미니 정원 위젯",
   "main": "electron/main.cjs",
@@ -93,6 +93,16 @@
           "flowergarden"
         ]
       }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "kangabee",
+        "repo": "desktop-flower-garden"
+      }
     ]
+  },
+  "dependencies": {
+    "electron-updater": "6.8.10"
   }
 }
