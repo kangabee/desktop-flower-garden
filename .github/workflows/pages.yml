@@ -46,6 +46,7 @@ jobs:
           cp pages/index.html site/index.html
           cp build/icon.png site/icon.png
           cp node_modules/galmuri/dist/Galmuri11.woff2 node_modules/galmuri/dist/Galmuri11-Bold.woff2 site/fonts/
+          cp node_modules/@fontsource/fusion-pixel-12px-proportional-sc/files/fusion-pixel-12px-proportional-sc-latin-400-normal.woff2 site/fonts/FusionPixelSC.woff2
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
