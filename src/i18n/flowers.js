@@ -63,6 +63,10 @@ const en = {
   'african-violet': ['African Violet', 'A little love', 'A small but certain love, inside.', 'Native to Tanzania'],
   'bird-of-paradise': ['Bird of Paradise', 'Everlasting', "Sending a heart that won't change, no matter the day.", 'South Africa'],
   agapanthus: ['Agapanthus', 'News of love', "The news of love you've been waiting for is almost here.", 'South Africa'],
+  'double-cherry': ['Double Cherry Blossom', 'Grace, modesty', 'A heart blooming in layers on the spring breeze.', 'Late-spring cherry lanes'],
+  'trumpet-vine': ['Chinese Trumpet Vine', 'Honor, glory', 'Have a day that shines like midsummer sun.', 'Midsummer garden walls'],
+  'korean-daisy': ['Korean Daisy', "Purity, a mother's love", 'Sending you the cozy warmth of autumn fields.', 'Autumn hills and fields'],
+  poinsettia: ['Poinsettia', 'Blessings, celebration', 'May your sparkling year-end be full of blessings.', 'Native to Mexico, the Christmas flower'],
 };
 
 const ja = {
@@ -126,6 +130,10 @@ const ja = {
   'african-violet': ['セントポーリア', '小さな愛', '小さいけれど確かな愛をこめました。', 'タンザニア原産'],
   'bird-of-paradise': ['ストレリチア', '輝かしい未来', 'どんな日でも変わらない気持ちを贈ります。', '南アフリカ'],
   agapanthus: ['アガパンサス', '愛の便り', '待っていた愛の便りが、もうすぐ届きます。', '南アフリカ'],
+  'double-cherry': ['八重桜', 'しとやか、上品', '春風に幾重にも咲いた気持ちです。', '晩春の桜並木'],
+  'trumpet-vine': ['ノウゼンカズラ', '名誉、栄光', '真夏の日差しのように輝く一日を。', '真夏の塀'],
+  'korean-daisy': ['チョウセンノギク', '純粋、母の愛', '秋の野原のぬくもりを届けます。', '秋の山と野'],
+  poinsettia: ['ポインセチア', '祝福、お祝い', 'きらめく年末が祝福でいっぱいになりますように。', 'メキシコ原産、クリスマスの花'],
 };
 
 const zh = {
@@ -189,6 +197,10 @@ const zh = {
   'african-violet': ['非洲紫罗兰', '小小的爱', '装满了小小却真切的爱。', '原产于坦桑尼亚'],
   'bird-of-paradise': ['天堂鸟', '永恒不变', '送上无论何时都不会改变的心意。', '南非'],
   agapanthus: ['百子莲', '爱的消息', '期待的爱的消息就快到了。', '南非'],
+  'double-cherry': ['八重樱', '端庄、文雅', '在春风里层层绽放的心意。', '晚春的樱花道'],
+  'trumpet-vine': ['凌霄花', '荣誉、光荣', '愿你的一天像盛夏阳光一样闪耀。', '盛夏的院墙'],
+  'korean-daisy': ['九节菊', '纯真、母爱', '送你秋日田野般温暖的心意。', '秋天的山野'],
+  poinsettia: ['一品红', '祝福、庆贺', '愿闪亮的年末充满祝福。', '原产墨西哥，圣诞之花'],
 };
 
 const toFields = (table) =>

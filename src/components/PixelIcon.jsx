@@ -150,6 +150,61 @@ export const ICONS = {
     rows: ['ab', 'ba'],
     colors: { a: '#7a5236', b: '#a6d96a' },
   },
+  // ── 방문객 (A·B 두 프레임을 번갈아 보여 날갯짓) ──
+  butterflyA: {
+    rows: ['aa...aa', 'aba.aba', 'aaakaaa', '.aakaa.', 'aa.k.aa'],
+    colors: { a: '#ffb7d5', b: '#ff6fa8', k: '#3a2a2a' },
+  },
+  butterflyB: {
+    rows: ['...k...', '.aakaa.', '.abkba.', '..aka..', '...k...'],
+    colors: { a: '#ffb7d5', b: '#ff6fa8', k: '#3a2a2a' },
+  },
+  rainbowA: {
+    rows: ['rr...rr', 'ooo.ooo', 'yyykyyy', '.ggkgg.', 'bb.k.bb'],
+    colors: { r: '#ff7a7a', o: '#ffb347', y: '#ffe066', g: '#7fd07a', b: '#7cb4ff', k: '#3a2a2a' },
+  },
+  rainbowB: {
+    rows: ['...k...', '.rrkrr.', '.ookoo.', '..yky..', '...k...'],
+    colors: { r: '#ff7a7a', o: '#ffb347', y: '#ffe066', k: '#3a2a2a' },
+  },
+  beeA: {
+    rows: ['.w...w.', '.ww.ww.', '.yykyy.', 'yykyykk', '.yykyy.'],
+    colors: { w: '#dff1ff', y: '#ffd23f', k: '#2b1b22' },
+  },
+  beeB: {
+    rows: ['.......', '.w...w.', 'wyykyyw', 'yykyykk', '.yykyy.'],
+    colors: { w: '#dff1ff', y: '#ffd23f', k: '#2b1b22' },
+  },
+  ladybugA: {
+    rows: ['..kkk..', '.rkrkr.', 'rrkrkrr', 'rkrrrkr', '.rrrrr.'],
+    colors: { r: '#e8303a', k: '#2b1b22' },
+  },
+  ladybugB: {
+    rows: ['..kkk..', 'rrkrkrr', 'rkrrrkr', 'rrkrkrr', '.r.r.r.'],
+    colors: { r: '#e8303a', k: '#2b1b22' },
+  },
+  sparrowA: {
+    rows: ['...bb....', '..bwbb...', '.bbbbbbo.', 'bbbbbbb..', '.cbbbb...', '..k.k....'],
+    colors: { b: '#a0704a', w: '#2b1b22', c: '#f5e6c8', o: '#ffb347', k: '#5e3d27' },
+  },
+  sparrowB: {
+    rows: ['.bb......', '..bbbb...', '.bbwbbbo.', 'bbbbbbb..', '.cbbbb...', '..k.k....'],
+    colors: { b: '#a0704a', w: '#2b1b22', c: '#f5e6c8', o: '#ffb347', k: '#5e3d27' },
+  },
+  fireflyA: {
+    rows: ['..y..', '.yYy.', 'yYWYy', '.yYy.', '..k..'],
+    colors: { y: '#fff3a0', Y: '#ffe066', W: '#ffffff', k: '#3a3a2a' },
+    noOutline: true,
+  },
+  fireflyB: {
+    rows: ['.....', '..y..', '.yWy.', '..y..', '..k..'],
+    colors: { y: '#fff3a0', W: '#ffffff', k: '#3a3a2a' },
+    noOutline: true,
+  },
+  cloud: {
+    rows: ['....wwww.....', '..wwwwwwww...', '.wwwwwwwwwww.', 'wwwwwwwwwwwww', '.gggggggggggg'],
+    colors: { w: '#ffffff', g: '#dfe6ee' },
+  },
   // 전설 꽃의 반짝임 (빛이라서 외곽선 없이)
   shine: {
     rows: [
@@ -170,6 +225,34 @@ export const ICONS = {
     rows: ['..w..', '..c..', 'wcWcw', '..c..', '..w..'],
     colors: { w: '#fff1b8', c: '#ffffff', W: '#ffffff' },
     noOutline: true,
+  },
+  pot: {
+    rows: [
+      '..ggg....',
+      '.g.g.gg..',
+      '...gg....',
+      'RRRRRRRRR',
+      'hrrrrrrrr',
+      '.rrrrrrr.',
+      '.rrrrrrq.',
+      '..rrrqq..',
+      '..qqqqq..',
+    ],
+    colors: { g: '#6cc46a', R: '#f4b48c', r: '#e8956b', h: '#fbd5ba', q: '#b8653f' },
+  },
+  gear: {
+    rows: [
+      '...a.a...',
+      '.a.aaa.a.',
+      '..aaaaa..',
+      'aaab.baaa',
+      '.aa...aa.',
+      'aaab.baaa',
+      '..aaaaa..',
+      '.a.aaa.a.',
+      '...a.a...',
+    ],
+    colors: { a: '#9a8fa6', b: '#7a6f86' },
   },
   sparkle: {
     rows: ['.a.', 'awa', '.a.'],

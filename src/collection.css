@@ -60,7 +60,8 @@
   color: var(--ink);
   cursor: pointer;
 }
-.slot canvas:not(.slot-flag) { width: 54px !important; height: 86px !important; }
+/* 칸 안의 꽃 그림만 줄인다 (국기·반짝이 별까지 늘어나지 않게) */
+.slot .slot-plant { width: 54px !important; height: 86px !important; }
 .slot:hover:not(:disabled) { background: #fff0f4; }
 .slot.selected { background: #ffe4ec; transform: translate(1px, 1px); box-shadow: 2px 2px 0 rgba(43, 27, 34, 0.18); }
 .slot.locked { cursor: default; color: var(--muted); border-style: dashed; box-shadow: none; }
@@ -213,3 +214,95 @@
   50% { box-shadow: 3px 3px 0 rgba(43, 27, 34, 0.18), 0 0 10px 2px rgba(255, 214, 102, 0.75); }
 }
 .detail-hero { position: relative; }
+
+/* ── 도감 · 방문객 · 꾸미기 · 설정 탭 ── */
+.page-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 14px; }
+.page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid var(--ink);
+  border-bottom-width: 4px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.page-tab:hover { background: #fff0f4; }
+.page-tab.active { background: #ffd0dc; }
+
+.slot-no { position: absolute; bottom: 3px; left: 4px; font-size: 9px; color: var(--muted); }
+.slot-season { position: absolute; bottom: 2px; right: 4px; font-size: 11px; color: #d9577f; }
+.dex-no { font-size: 10px; color: var(--muted); }
+.season { font-size: 11px; color: #d9577f; }
+
+.page-title { margin: 4px 0 8px; font-size: 14px; }
+.page-intro { margin: 0 0 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; }
+.page-foot { margin-top: 14px; }
+.pot-step { padding: 2px 8px; border: 1px dashed rgba(43, 27, 34, 0.35); }
+.pot-step.done { border-style: solid; color: #3f8a44; font-weight: 700; }
+
+.cards {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 3px 3px 0 rgba(43, 27, 34, 0.18);
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: left;
+}
+.card h3 { margin: 0 0 4px; font-size: 13px; }
+.card p { margin: 2px 0; }
+.card.locked { border-style: dashed; box-shadow: none; color: var(--muted); }
+.card-art { flex: none; display: grid; place-items: center; min-width: 60px; }
+.card.locked .card-art canvas { filter: grayscale(1) opacity(0.35); }
+.skin.card { cursor: pointer; }
+.skin.card .card-art canvas { width: 54px !important; height: 86px !important; filter: none; }
+.skin.card:hover:not(:disabled) { background: #fff0f4; }
+.skin.card.selected { background: #ffe4ec; }
+.skin.card:disabled { cursor: default; }
+.ok { color: #3f8a44; font-weight: 700; }
+.small { font-size: 11px; }
+
+.settings { display: grid; gap: 18px; max-width: 520px; }
+.settings section {
+  padding: 12px 14px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 3px 3px 0 rgba(43, 27, 34, 0.18);
+}
+.settings section > p { margin: 0 0 8px; }
+.settings .row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.settings .row > span:first-child:not(:only-child) { min-width: 90px; }
+.settings input[type='checkbox'] { width: 16px; height: 16px; accent-color: #d9577f; }
+.settings select,
+.settings .text {
+  padding: 5px 8px;
+  border: 2px solid var(--ink);
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
+}
+.settings .text { flex: 1; min-width: 160px; }
+.seg { display: flex; gap: 4px; }
+.city-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.city-results .px-btn { width: 100%; justify-content: flex-start; white-space: normal; text-align: left; }
+.confirm { margin-top: 8px; padding: 10px; border: 2px dashed #d9577f; background: #fff7f9; }
+.confirm p { margin: 0; }

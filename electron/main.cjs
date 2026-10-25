@@ -15,7 +15,9 @@ const {
   nativeImage,
   clipboard,
   shell,
+  dialog,
 } = require('electron');
+const fs = require('node:fs');
 const path = require('node:path');
 const { GardenStore } = require('./store.cjs');
 const { LANG_IDS, LANG_NAMES, MENU, normalizeLang, detectSystemLanguage } = require('./i18n.cjs');
@@ -26,6 +28,16 @@ const DEV_URL = 'http://localhost:5173';
 
 // 말풍선·햇빛 연출이 창 가장자리에서 잘리지 않도록 여유 있게 (투명한 부분은 클릭이 통과하므로 무해)
 const WIDGET = { width: 280, height: 300, margin: 16 };
+// 선반: 화분이 늘 때마다 창이 이만큼 넓어진다 (src/App.jsx 의 POT_GAP 과 같아야 함)
+const POT_GAP = 110;
+// 화분 크기 설정 → 창 확대 비율 (도트 한 칸이 2px · 3px · 4px 이 되도록)
+const SIZE_ZOOM = { small: 2 / 3, normal: 1, large: 4 / 3 };
+const DEFAULT_SETTINGS = {
+  sound: true,
+  size: 'normal',
+  reduceMotion: false,
+  weather: { enabled: false, name: null, lat: null, lon: null },
+};
 
 let win = null;
 let collectionWin = null;
@@ -33,7 +45,7 @@ let tray = null;
 let store = null;
 let pinned = true;
 // 렌더러가 보내주는 현재 상태 (메뉴 구성용)
-let plantState = { bloomed: false };
+let plantState = { bloomed: false, pots: 1 };
 // 선물 링크의 "씨앗 받기"로 들어온 씨앗 (위젯이 준비되면 전달)
 // 위젯이 아직 준비되지 않았을 때 보낼 명령 (선물 씨앗·업데이트 알림)
 const pendingCommands = [];
@@ -66,7 +78,8 @@ app.on('open-url', (event, url) => {
 if (seedLinkIn(process.argv)) handleSeedLink(seedLinkIn(process.argv));
 
 // 개발 실행(npm run dev)과 설치된 앱이 같은 정원 데이터를 쓰도록 저장 폴더 이름을 고정
-app.setPath('userData', path.join(app.getPath('appData'), 'desktop-flower-garden'));
+// (DFG_USER_DATA: 설치된 앱을 켜 둔 채 따로 시험할 때만 쓰는 다른 폴더)
+app.setPath('userData', process.env.DFG_USER_DATA || path.join(app.getPath('appData'), 'desktop-flower-garden'));
 
 // 아이콘을 두 번 눌러도 화분이 두 개 생기지 않게: 이미 실행 중이면 그쪽에서 도감을 연다
 const gotLock = app.requestSingleInstanceLock();
@@ -83,11 +96,39 @@ function loadPage(target, hash = '') {
   else target.loadFile(path.join(__dirname, '..', 'dist', 'index.html'), { hash });
 }
 
+function settingsOf(state) {
+  const s = state?.settings ?? {};
+  return { ...DEFAULT_SETTINGS, ...s, weather: { ...DEFAULT_SETTINGS.weather, ...s.weather } };
+}
+
+/** 위젯 창 크기: 화분 수 × 화분 크기 설정 */
+function widgetSize() {
+  const zoom = SIZE_ZOOM[settingsOf(store.get()).size] ?? 1;
+  const pots = Math.max(1, plantState.pots ?? 1);
+  return {
+    // 올림: 작게(×2/3)일 때 1px 모자라 오른쪽 화분 끝이 잘리지 않도록
+    width: Math.ceil((WIDGET.width + (pots - 1) * POT_GAP) * zoom),
+    height: Math.ceil(WIDGET.height * zoom),
+    zoom,
+  };
+}
+
+/** 화분 수·크기가 바뀌면 창 크기를 맞춘다 (오른쪽 아래 모서리를 기준으로 늘고 줄어든다) */
+function layoutWidget() {
+  if (!win) return;
+  const { width, height, zoom } = widgetSize();
+  win.webContents.setZoomFactor(zoom);
+  const b = win.getBounds();
+  if (b.width === width && b.height === height) return;
+  win.setBounds({ x: b.x + b.width - width, y: b.y + b.height - height, width, height });
+}
+
 function defaultPosition() {
   const { workArea } = screen.getPrimaryDisplay();
+  const { width, height } = widgetSize();
   return {
-    x: workArea.x + workArea.width - WIDGET.width - WIDGET.margin,
-    y: workArea.y + workArea.height - WIDGET.height,
+    x: workArea.x + workArea.width - width - WIDGET.margin,
+    y: workArea.y + workArea.height - height,
   };
 }
 
@@ -95,14 +136,15 @@ function defaultPosition() {
 function initialPosition() {
   let saved = store.get().position;
   if (saved) {
-    // 창 크기가 바뀌었어도 화분(창 아래 가운데)이 같은 자리에 오도록 보정. 예전 저장분은 200×240
+    // 창 크기가 바뀌었어도 오른쪽 아래 모서리가 같은 자리에 오도록 보정. 예전 저장분은 200×240
+    const { width, height } = widgetSize();
     const w = saved.w ?? 200;
     const h = saved.h ?? 240;
-    saved = { x: saved.x + Math.round((w - WIDGET.width) / 2), y: saved.y + (h - WIDGET.height) };
+    saved = { x: saved.x + w - width, y: saved.y + h - height };
     const visible = screen.getAllDisplays().some(({ workArea: a }) =>
-      saved.x + WIDGET.width / 2 >= a.x &&
-      saved.x + WIDGET.width / 2 <= a.x + a.width &&
-      saved.y + WIDGET.height / 2 >= a.y &&
+      saved.x + width / 2 >= a.x &&
+      saved.x + width / 2 <= a.x + a.width &&
+      saved.y + height / 2 >= a.y &&
       saved.y <= a.y + a.height,
     );
     if (visible) return saved;
@@ -112,10 +154,11 @@ function initialPosition() {
 
 function createWidgetWindow() {
   const { x, y } = initialPosition();
+  const { width, height } = widgetSize();
 
   win = new BrowserWindow({
-    width: WIDGET.width,
-    height: WIDGET.height,
+    width,
+    height,
     x,
     y,
     transparent: true,
@@ -144,6 +187,8 @@ function createWidgetWindow() {
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setIgnoreMouseEvents(true, { forward: true });
   loadPage(win);
+  // 화분 크기 설정은 화면 확대 비율로 적용 (페이지를 불러올 때마다 다시)
+  win.webContents.on('did-finish-load', () => layoutWidget());
 
   win.on('closed', () => {
     win = null;
@@ -254,6 +299,60 @@ function broadcast(state, except) {
   }
 }
 
+// ── 설정 ──
+function setSettings(patch) {
+  const settings = { ...settingsOf(store.get()), ...patch };
+  broadcast(store.merge({ settings }));
+  onSettingsChanged();
+}
+
+function onSettingsChanged() {
+  layoutWidget();
+  startWeather();
+  refreshTray();
+}
+
+// ── 날씨 (선택 기능): Open-Meteo 무료 API, 키 없음. 30분마다 위도·경도의 지금 날씨만 받는다 ──
+let weatherTimer = null;
+let weatherKey = null;
+
+/** WMO 날씨 코드 → clear | cloudy | rain | snow (src/lib/weather.js 와 같은 규칙) */
+function weatherKind(code) {
+  if (code <= 1) return 'clear';
+  if (code <= 48) return 'cloudy';
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
+  return 'rain';
+}
+
+async function fetchWeather({ lat, lon }) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=weather_code,is_day&timezone=auto`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'DesktopFlowerGarden' } });
+    if (!res.ok) return;
+    const { current } = await res.json();
+    const now = Date.now();
+    const kind = weatherKind(current.weather_code);
+    const prev = store.get().weather;
+    // 비가 그치고 해가 나면 1시간 동안 무지개
+    let rainbowUntil = prev?.rainbowUntil && prev.rainbowUntil > now ? prev.rainbowUntil : null;
+    if (prev?.kind === 'rain' && (kind === 'clear' || kind === 'cloudy') && current.is_day) rainbowUntil = now + 60 * 60 * 1000;
+    broadcast(store.merge({ weather: { kind, isDay: Boolean(current.is_day), at: now, rainbowUntil } }));
+  } catch {
+    /* 오프라인 등은 다음 확인 때 다시 */
+  }
+}
+
+function startWeather() {
+  const { weather } = settingsOf(store.get());
+  const key = weather.enabled && weather.lat != null ? `${weather.lat},${weather.lon}` : null;
+  if (key === weatherKey) return;
+  weatherKey = key;
+  clearInterval(weatherTimer);
+  if (!key) return;
+  fetchWeather(weather);
+  weatherTimer = setInterval(() => fetchWeather(settingsOf(store.get()).weather), 30 * 60 * 1000);
+}
+
 /** 사용자가 고른 언어 → 없으면 컴퓨터 언어 */
 function menuLang() {
   const state = store?.get() ?? {};
@@ -270,6 +369,7 @@ function setLanguage(language) {
 
 function buildMenu() {
   const chosen = normalizeLang(store?.get().language);
+  const settings = settingsOf(store?.get());
   const updateItems = update.ready
     ? [{ label: m('updateReady').replace('{v}', update.ready), click: installUpdateNow }, { type: 'separator' }]
     : update.available
@@ -315,6 +415,29 @@ function buildMenu() {
         app.setLoginItemSettings({ openAtLogin: item.checked });
         refreshTray();
       },
+    },
+    {
+      label: m('settings'),
+      submenu: [
+        { label: m('sound'), type: 'checkbox', checked: settings.sound, click: (i) => setSettings({ sound: i.checked }) },
+        {
+          label: m('potSize'),
+          submenu: ['small', 'normal', 'large'].map((size) => ({
+            label: m(`size_${size}`),
+            type: 'radio',
+            checked: settings.size === size,
+            click: () => setSettings({ size }),
+          })),
+        },
+        {
+          label: m('reduceMotion'),
+          type: 'checkbox',
+          checked: settings.reduceMotion,
+          click: (i) => setSettings({ reduceMotion: i.checked }),
+        },
+        { type: 'separator' },
+        { label: m('moreSettings'), click: () => openCollection('collection/settings') },
+      ],
     },
     {
       label: m('language'),
@@ -400,7 +523,9 @@ ipcMain.on('widget:state', (_event, state) => {
     widgetReady = true;
     for (const command of pendingCommands.splice(0)) send(command);
   }
+  const potsChanged = state.pots != null && state.pots !== plantState.pots;
   plantState = { ...plantState, ...state };
+  if (potsChanged) layoutWidget();
   refreshTray();
 });
 ipcMain.on('widget:show-menu', () => {
@@ -411,6 +536,49 @@ ipcMain.on('widget:show-menu', () => {
 ipcMain.handle('garden:get', () => store.get());
 ipcMain.on('garden:merge', (event, patch) => {
   broadcast(store.merge(patch), event.sender);
+  if (patch.settings) onSettingsChanged();
+  if ('language' in patch) {
+    refreshTray();
+    collectionWin?.setTitle(m('collectionTitle'));
+  }
+});
+
+// ── 백업: 정원 기록을 파일로 내보내고 불러오기 ──
+let pendingImport = null;
+ipcMain.handle('garden:export', async (event) => {
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const { canceled, filePath } = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), {
+    defaultPath: path.join(app.getPath('documents'), `desktop-flower-garden-${stamp}.json`),
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePath) return null;
+  const { systemLanguage, ...data } = store.get();
+  await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2));
+  return path.basename(filePath);
+});
+ipcMain.handle('garden:import', async (event) => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+    properties: ['openFile'],
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePaths[0]) return null;
+  try {
+    const data = JSON.parse(await fs.promises.readFile(filePaths[0], 'utf8'));
+    if (!data || !Array.isArray(data.collection) || !(Array.isArray(data.pots) || data.timer)) return { ok: false };
+    pendingImport = data;
+    return { ok: true, bloomed: data.collection.length, species: new Set(data.collection.map((e) => e.flowerId)).size };
+  } catch {
+    return { ok: false };
+  }
+});
+ipcMain.handle('garden:import-apply', () => {
+  if (!pendingImport) return false;
+  const state = store.replace({ ...pendingImport, systemLanguage: store.get().systemLanguage });
+  pendingImport = null;
+  broadcast(state);
+  onSettingsChanged();
+  win?.webContents.reload(); // 위젯은 새 기록으로 처음부터 다시 그린다
+  return true;
 });
 ipcMain.on('garden:open-collection', (_event, route) => openCollection(route));
 
@@ -428,7 +596,7 @@ app.whenReady().then(() => {
   store = new GardenStore(app.getPath('userData'));
   // 화면(렌더러)도 같은 값을 쓰도록 컴퓨터 언어를 저장해 둔다
   store.merge({ systemLanguage: detectSystemLanguage(app) });
-  const firstRun = !store.get().timer;
+  const firstRun = !store.get().timer && !store.get().pots?.length;
 
   // macOS: Dock 아이콘 숨김 → 앱이 아니라 바탕화면 소품처럼 보이게
   app.dock?.hide();
@@ -441,6 +609,7 @@ app.whenReady().then(() => {
   // 처음 설치한 사람에게: 도감 창이 사용법 안내를 겸한다 (Dock 아이콘이 없어 실행됐는지 헷갈리지 않게)
   if (firstRun) openCollection();
   startUpdateChecks();
+  startWeather();
 });
 
 // 도감 창만 닫혔을 때는 위젯은 계속 살아 있어야 한다

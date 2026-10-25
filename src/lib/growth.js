@@ -25,51 +25,59 @@ export function getPhase(progress) {
   return phase;
 }
 
-/** 햇빛 부스터를 켜 둔 동안의 성장 배율 */
-export const SUN_BOOST = 1.1;
+// ── 성장 속도 ──
+// 기본 속도는 ×1. 햇빛 부스터·날씨가 속도를 바꾸며, 바뀔 때마다 "그때까지 더/덜 자란 몫"을 bonusMs 에 적립한다.
+//   boostSince: 지금 속도가 시작된 시각 / boostRate: 그 속도 (없으면 ×1)
 
-/** from 부터 to 까지 부스터 덕분에 더 자란 시간 */
-export function sunBonusMs(from, to) {
-  return from ? grownMs(from, to) * (SUN_BOOST - 1) : 0;
-}
+/** 햇빛 부스터 배율 (흐린 날은 약하게) */
+export const SUN_BOOST = 1.1;
+export const SUN_BOOST_CLOUDY = 1.05;
+
+/** 목마름: 햇빛을 켜 둔 채 물을 원하는 상태 → 햇빛 부스터가 멈춘다 */
+export const isThirsty = (pot) => Boolean(pot.sunOn) && pot.want?.kind === 'water';
 
 /**
- * 부스터가 실제로 도는 중인가: 햇빛이 켜져 있고, 목마르지 않을 때.
- * (햇빛을 켜 두면 흙이 빨리 말라 물을 자주 원하고, 물을 줄 때까지 부스터가 멈춘다)
+ * 이 화분의 지금 성장 속도
+ * @param effect weather.js 의 weatherEffect() 결과 ({ growth, sun }) — 날씨를 안 쓰면 생략
  */
-export function isBoosting(timer) {
-  return Boolean(timer.sunOn) && timer.want?.kind !== 'water';
+export function potRate(pot, effect = { growth: 1, sun: SUN_BOOST }) {
+  const sun = pot.sunOn && !isThirsty(pot) ? effect.sun : 1;
+  return sun * effect.growth;
 }
 
-/** 상태를 바꾸기 직전(t)에 지금까지 쌓인 부스터 몫을 bonusMs 로 옮긴다 */
-export function foldBoost(timer, t) {
-  if (!timer.boostSince) return timer;
+/** at 시각까지의 속도 변화 몫을 bonusMs 로 옮긴다 (상태를 바꾸기 직전에 호출) */
+export function foldRate(pot, at) {
+  if (!pot.boostSince) return pot;
+  const rate = pot.boostRate ?? SUN_BOOST; // 예전 저장분은 햇빛 부스터만 있었다
   return {
-    ...timer,
-    bonusMs: (timer.bonusMs ?? 0) + sunBonusMs(timer.boostSince, t),
+    ...pot,
+    bonusMs: (pot.bonusMs ?? 0) + grownMs(pot.boostSince, at) * (rate - 1),
     boostSince: null,
+    boostRate: null,
   };
 }
 
-/** 상태를 바꾼 직후(t)에 부스터가 돌아야 하면 다시 측정 시작 */
-export function resumeBoost(timer, t) {
-  return isBoosting(timer) ? { ...timer, boostSince: t } : { ...timer, boostSince: null };
+/** 상태를 바꾼 직후(at) 새 속도로 다시 측정 시작 (×1 이면 측정할 것 없음) */
+export function resumeRate(pot, at, effect) {
+  const rate = potRate(pot, effect);
+  return rate === 1 ? { ...pot, boostSince: null, boostRate: null } : { ...pot, boostSince: at, boostRate: rate };
 }
 
-/** 타이머 상태 → 화면에 필요한 모든 값 */
-export function computeGrowth(timer, now = Date.now()) {
-  const { startedAt, bonusMs = 0, boostSince = null } = timer;
-  // bonusMs: 돌봄·지난 부스터로 앞당긴 시간 / sunBonusMs: 지금 돌고 있는 부스터 몫
-  const elapsed = grownMs(startedAt, now) + bonusMs + sunBonusMs(boostSince, now);
-  const progress = Math.min(1, elapsed / GOAL_MS);
+/** 화분 상태 → 화면에 필요한 모든 값 */
+export function computeGrowth(pot, now = Date.now()) {
+  const { startedAt, bonusMs = 0, boostSince = null } = pot;
+  const rate = boostSince ? (pot.boostRate ?? SUN_BOOST) : 1;
+  const elapsed = grownMs(startedAt, now) + bonusMs + (boostSince ? grownMs(boostSince, now) * (rate - 1) : 0);
+  const progress = Math.min(1, Math.max(0, elapsed / GOAL_MS));
   const left = Math.max(0, GOAL_MS - elapsed);
   return {
     progress,
     percent: Math.floor(progress * 100),
     phase: getPhase(progress),
-    // 부스터가 돌면 실제로 기다릴 시간은 1.1배 빨리 줄어든다
-    remainingMs: boostSince ? left / SUN_BOOST : left,
-    sunOn: Boolean(timer.sunOn),
-    thirsty: Boolean(timer.sunOn) && timer.want?.kind === 'water',
+    // 속도가 바뀐 만큼 실제로 기다릴 시간도 달라진다
+    remainingMs: left / rate,
+    rate,
+    sunOn: Boolean(pot.sunOn),
+    thirsty: isThirsty(pot),
   };
 }

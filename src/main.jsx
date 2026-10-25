@@ -4,7 +4,7 @@ import App from './App.jsx';
 import Collection from './Collection.jsx';
 import Gallery from './Gallery.jsx';
 import { initGarden } from './lib/garden.js';
-import { createTimer } from './hooks/useGrowth.js';
+import { migrateGarden } from './lib/pots.js';
 import './fonts.js';
 import './styles.css';
 
@@ -19,7 +19,7 @@ function pickRoot() {
   return App;
 }
 
-initGarden(createTimer).then(() => {
+initGarden(migrateGarden).then(() => {
   const Root = pickRoot();
   document.documentElement.dataset.view = Root === App ? 'widget' : 'page';
   createRoot(document.getElementById('root')).render(

@@ -16,6 +16,12 @@ const DEFAULT_STATE = {
   language: null, // 사용자가 고른 언어 (null = 컴퓨터 언어 따라가기)
   systemLanguage: null, // 실행할 때마다 컴퓨터 언어로 갱신
   notifiedVersion: null, // 말풍선으로 이미 알린 새 버전 (같은 버전은 한 번만 알림)
+  pots: [], // 선반의 화분들 (v0.5~, 예전 timer 를 대신함)
+  settings: null, // 효과음 · 화분 크기 · 움직임 줄이기 · 날씨
+  potSkin: 'classic', // 화분 꾸미기
+  visitors: {}, // 만난 방문객 수
+  nextSeedLuck: {}, // 방문객이 남긴 다음 씨앗 행운
+  weather: null, // 마지막으로 받은 날씨 { kind, isDay, at, rainbowUntil }
 };
 
 class GardenStore {
@@ -48,6 +54,13 @@ class GardenStore {
   #scheduleSave() {
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => this.flush(), 300);
+  }
+
+  /** 백업 불러오기: 상태를 통째로 바꾼다 */
+  replace(state) {
+    this.state = { ...DEFAULT_STATE, ...state };
+    this.flush();
+    return this.state;
   }
 
   /** 임시 파일에 쓰고 rename → 쓰는 도중 꺼져도 파일이 깨지지 않음 */

@@ -26,12 +26,25 @@ html[data-view='widget'] body, html[data-view='widget'] #root {
   user-select: none;
 }
 
-.overlay {
+.shelf {
   position: relative;
   height: 100%;
 }
-.overlay.is-hover { cursor: grab; }
-.overlay.is-hover:active { cursor: grabbing; }
+.shelf.is-hover { cursor: grab; }
+.shelf.is-hover:active { cursor: grabbing; }
+
+/* 화분 하나의 무대 (280px). 선반에서 110px 간격으로 겹쳐 놓인다 */
+.pot-slot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  pointer-events: none;
+}
+.pot-slot .interactive,
+.pot-slot .visitor { pointer-events: auto; }
+.pot-slot.is-hover,
+.pot-slot.actions-open { z-index: 5; }
 
 /* ── 화분 (창 바닥 가운데에 붙어서 작업표시줄 위에 올라앉음) ── */
 .stage {
@@ -400,3 +413,91 @@ html[data-view='widget'] body, html[data-view='widget'] #root {
   .twinkle { animation-duration: 6s; }
   .shine-burst { animation: none; opacity: 0; }
 }
+
+/* ── 방문객 ── */
+.visitor-stage { z-index: 3; }
+.visitor {
+  position: absolute;
+  left: 46%;
+  top: 46%;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.visitor-path { position: relative; display: block; width: 20px; height: 16px; animation: flutter 7s steps(28) infinite; }
+.visitor-frame { position: absolute; left: 0; top: 0; }
+.vf-a { animation: blink 0.36s steps(1) infinite; }
+.vf-b { animation: blink 0.36s steps(1) infinite reverse; }
+.visitor:hover .visitor-path { filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)); }
+@keyframes flutter {
+  0%, 100% { transform: translate(-46px, -8px); }
+  25% { transform: translate(-6px, -36px); }
+  50% { transform: translate(40px, -12px); }
+  75% { transform: translate(6px, 22px); }
+}
+/* 무당벌레는 화분 테두리를 따라 기어가고, 참새는 화분 옆을 콩콩 */
+.visitor-ladybug { top: 82%; }
+.visitor-ladybug .visitor-path { animation: crawl 8s steps(32) infinite; }
+@keyframes crawl {
+  0%, 100% { transform: translate(-26px, 0); }
+  50% { transform: translate(24px, 0); }
+}
+.visitor-sparrow { top: 84%; left: 70%; }
+.visitor-sparrow .visitor-path { width: 24px; animation: hop-around 3s steps(6) infinite; }
+@keyframes hop-around {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-6px, -8px); }
+  50% { transform: translate(-12px, 0); }
+  75% { transform: translate(-6px, -8px); }
+}
+.visitor-firefly .visitor-path { animation-duration: 11s; filter: drop-shadow(0 0 4px #fff3a0) drop-shadow(0 0 8px #ffe066); }
+.visitor-rainbow .visitor-path { filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9)); }
+
+/* ── 날씨 ── */
+.weather { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.cloud { position: absolute; opacity: 0.92; animation: drift 40s linear infinite; }
+.cloud-1 { top: 40px; left: -40px; }
+.cloud-2 { top: 74px; left: -20px; animation-duration: 55s; animation-delay: -20s; }
+.weather-rain .cloud, .weather-snow .cloud { filter: brightness(0.86); }
+@keyframes drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(110vw); }
+}
+.raindrop {
+  position: absolute;
+  top: 60px;
+  width: 2px;
+  height: 6px;
+  background: #8cc8ff;
+  opacity: 0;
+  animation: rain-fall 0.9s steps(6) infinite;
+}
+@keyframes rain-fall {
+  0% { transform: translateY(0); opacity: 0.9; }
+  100% { transform: translateY(240px); opacity: 0.2; }
+}
+.flake {
+  position: absolute;
+  top: 50px;
+  width: 3px;
+  height: 3px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(160, 190, 220, 0.6);
+  opacity: 0;
+  animation: snow-fall 5s steps(20) infinite;
+}
+@keyframes snow-fall {
+  0% { transform: translate(0, 0); opacity: 1; }
+  50% { transform: translate(6px, 120px); }
+  100% { transform: translate(-6px, 250px); opacity: 0.3; }
+}
+.rainbow { position: absolute; left: 0; top: 30px; opacity: 0.55; image-rendering: pixelated; }
+
+/* ── 움직임 줄이기 ── */
+.calm .cloud,
+.calm .raindrop,
+.calm .flake { animation-duration: 120s; }
+.calm .twinkle { animation-duration: 6s; }
+.calm .visitor-path { animation-duration: 20s; }
+.calm .legend-aura { animation: none; }

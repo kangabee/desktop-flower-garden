@@ -1063,22 +1063,98 @@ export const FLOWERS = [
     },
     colors: { a: '#6f9cff', b: '#3a68d8', e: '#ffffff' },
   },
+
+  // ═════════ 계절 한정 꽃: 그 기간에만 랜덤 씨앗으로 나온다 (season: [월, 일] ~ [월, 일]) ═════════
+  {
+    id: 'double-cherry',
+    name: '겹벚꽃',
+    nameEn: 'Double Cherry Blossom',
+    rarity: 'rare',
+    region: 'asia',
+    season: { from: [3, 20], to: [4, 30] },
+    origin: '늦봄의 벚꽃길',
+    language: '정숙, 단아함',
+    message: '봄바람에 겹겹이 피어난 마음이에요.',
+    stemHeight: 13,
+    head: radial({ size: 11, petals: 10, radius: 5, core: 1.2, base: 0.65, sharp: 0.9 }),
+    colors: { a: '#ffc4d8', b: '#f08cb0', c: '#e8577f', d: '#c23d63', w: '#ffe6ee', g: '#7a5a4a' },
+  },
+  {
+    id: 'trumpet-vine',
+    name: '능소화',
+    nameEn: 'Chinese Trumpet Vine',
+    rarity: 'rare',
+    region: 'asia',
+    season: { from: [7, 1], to: [8, 31] },
+    origin: '한여름의 담장',
+    language: '명예, 영광',
+    message: '한여름 햇살처럼 빛나는 하루 되세요.',
+    stemHeight: 14,
+    head: { rows: ['.a.a.a.', 'aaabaaa', 'abeeeba', 'aaeeeaa', '.aaeaa.', '..aba..', '...g...'], anchor: [3, 6] },
+    colors: { a: '#ff8a3d', b: '#e0601a', e: '#ffd84d' },
+  },
+  {
+    id: 'korean-daisy',
+    name: '구절초',
+    nameEn: 'Korean Daisy',
+    rarity: 'rare',
+    region: 'asia',
+    season: { from: [10, 1], to: [11, 15] },
+    origin: '가을 산과 들',
+    language: '순수, 어머니의 사랑',
+    message: '가을 들녘의 포근한 마음을 보내요.',
+    stemHeight: 13,
+    head: radial({ size: 11, petals: 14, radius: 5, core: 1.6, base: 0.4, sharp: 1.3 }),
+    colors: { a: '#fff4f8', b: '#f4cbe0', c: '#ffd23f', d: '#e8a22b', w: '#fff3b0' },
+  },
+  {
+    id: 'poinsettia',
+    name: '포인세티아',
+    nameEn: 'Poinsettia',
+    rarity: 'rare',
+    region: 'americas',
+    season: { from: [12, 1], to: [12, 31] },
+    origin: '멕시코 원산, 크리스마스의 꽃',
+    language: '축복, 축하',
+    message: '반짝이는 연말, 축복이 가득하길.',
+    stemHeight: 12,
+    head: radial({ size: 13, petals: 8, radius: 6, core: 1.4, base: 0.25, sharp: 1 }),
+    colors: { a: '#e8203a', b: '#b8102a', c: '#ffd84d', d: '#7fae3a', w: '#fff3b0' },
+  },
 ];
 
 export const FLOWER_BY_ID = Object.fromEntries(FLOWERS.map((f) => [f.id, f]));
 
-/** 희귀도 가중치 → 그 안에서 균등하게 랜덤 꽃 하나 */
-export function pickRandomFlower(random = Math.random) {
-  const tiers = Object.entries(RARITY);
-  const total = tiers.reduce((sum, [, r]) => sum + r.weight, 0);
+/** 계절 한정 꽃이 지금 피는 기간인가 */
+export function inSeason(flower, now = Date.now()) {
+  if (!flower.season) return true;
+  const d = new Date(now);
+  const md = (d.getMonth() + 1) * 100 + d.getDate();
+  const { from, to } = flower.season;
+  return md >= from[0] * 100 + from[1] && md <= to[0] * 100 + to[1];
+}
+
+// 계절 한정 꽃이 피는 기간에는 랜덤 씨앗 4개 중 1개꼴로 그 꽃이 나온다
+const SEASON_CHANCE = 0.25;
+
+/**
+ * 랜덤 씨앗: 희귀도 가중치 → 그 안에서 균등하게 하나.
+ * luck: 방문객이 남긴 행운 ({ rare: 2 } = 희귀 확률 2배, { legendary: 3 } = 전설 3배)
+ */
+export function pickRandomFlower(random = Math.random, { luck = {}, now = Date.now() } = {}) {
+  const seasonal = FLOWERS.filter((f) => f.season && inSeason(f, now));
+  if (seasonal.length && random() < SEASON_CHANCE) return seasonal[Math.floor(random() * seasonal.length)];
+
+  const tiers = Object.entries(RARITY).map(([key, r]) => [key, r.weight * (luck[key] ?? 1)]);
+  const total = tiers.reduce((sum, [, w]) => sum + w, 0);
   let roll = random() * total;
   let rarity = tiers[0][0];
-  for (const [key, r] of tiers) {
-    if ((roll -= r.weight) < 0) {
+  for (const [key, w] of tiers) {
+    if ((roll -= w) < 0) {
       rarity = key;
       break;
     }
   }
-  const pool = FLOWERS.filter((f) => f.rarity === rarity);
+  const pool = FLOWERS.filter((f) => f.rarity === rarity && !f.season);
   return pool[Math.floor(random() * pool.length)];
 }

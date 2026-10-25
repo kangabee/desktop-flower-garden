@@ -1,4 +1,6 @@
 // 효과음: 오디오 파일 없이 WebAudio로 합성한다 (8비트 오르골 느낌).
+// 설정에서 효과음을 끄면 아무 소리도 내지 않는다 (사무실용).
+import { getGarden, settingsOf } from './garden.js';
 let ctx = null;
 
 function audio() {
@@ -22,6 +24,7 @@ function tone(ac, { freq, start, length, type = 'sine', volume = 0.1, glideTo })
 }
 
 function safely(fn) {
+  if (!settingsOf(getGarden()).sound) return;
   try {
     fn(audio());
   } catch {
@@ -97,5 +100,14 @@ export function playFertilizer() {
     }
     tone(ac, { freq: NOTE.C5, start: t + 0.7, length: 0.6, volume: 0.06 });
     tone(ac, { freq: NOTE.G5, start: t + 0.8, length: 0.6, volume: 0.05 });
+  });
+}
+
+/** 방문객 등장: 반짝이는 짧은 두 음 */
+export function playVisitor() {
+  safely((ac) => {
+    const t = ac.currentTime + 0.05;
+    tone(ac, { freq: NOTE.E6, start: t, length: 0.3, volume: 0.06 });
+    tone(ac, { freq: NOTE.G6, start: t + 0.12, length: 0.4, volume: 0.06 });
   });
 }

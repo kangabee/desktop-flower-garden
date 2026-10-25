@@ -4,6 +4,7 @@ import PixelIcon from './components/PixelIcon.jsx';
 import PixelFlag from './components/PixelFlag.jsx';
 import Twinkles from './components/Twinkles.jsx';
 import GiftEditor from './GiftEditor.jsx';
+import { DecorPage, SettingsPage, VisitorsPage } from './CollectionPages.jsx';
 import { FLOWERS, FLOWER_BY_ID, RARITY, REGIONS } from './data/flowers.js';
 import { flowerText, formatDuration, nationName, regionName, t, useLang } from './i18n/index.js';
 import { gardenApi, useGarden } from './lib/garden.js';
@@ -11,12 +12,22 @@ import { formatDate } from './lib/card.js';
 import './collection.css';
 
 // 해시 라우트: #collection · #collection/flower/<id> · #collection/gift/<uid>
+//            #collection/visitors · #collection/decor · #collection/settings
 function parseRoute(hash) {
   const [, view, id] = hash.replace(/^#/, '').split('/');
   return { view: view ?? 'list', id: id ? decodeURIComponent(id) : null };
 }
 
 const REGION_KEY = 'dfg.collection.region';
+
+// 도감 순서: 전설 → 희귀 → 흔함, 같은 등급은 추가된 순서. 도감 번호는 추가된 순서라 바뀌지 않는다
+const RARITY_ORDER = { legendary: 0, rare: 1, common: 2 };
+const DEX_NO = Object.fromEntries(FLOWERS.map((f, i) => [f.id, String(i + 1).padStart(3, '0')]));
+const SORTED = [...FLOWERS].sort((a, b) => RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]);
+
+const PAGES = ['list', 'visitors', 'decor', 'settings'];
+const PAGE_ICON = { list: 'book', visitors: 'butterflyA', decor: 'pot', settings: 'gear' };
+const pageOf = (view) => (view === 'flower' ? 'list' : view);
 
 // 전설 꽃 반짝임 자리 (상자 기준 %)
 const SLOT_STARS = [
@@ -90,8 +101,9 @@ export default function Collection() {
     );
   }
 
+  const page = pageOf(route.view);
   const discovered = Object.keys(bySpecies).length;
-  const shown = region === 'all' ? FLOWERS : FLOWERS.filter((f) => f.region === region);
+  const shown = region === 'all' ? SORTED : SORTED.filter((f) => f.region === region);
   const selected = FLOWER_BY_ID[route.id] ?? shown.find((f) => bySpecies[f.id]) ?? null;
   const tabs = [{ id: 'all', label: t('c.all') }, ...REGIONS.map((r) => ({ ...r, label: regionName(r.id) }))].map((r) => {
     const list = r.id === 'all' ? FLOWERS : FLOWERS.filter((f) => f.region === r.id);
@@ -106,6 +118,25 @@ export default function Collection() {
         </h1>
         <p>{t('c.summary', { found: discovered, total: FLOWERS.length, bloomed: collection.length })}</p>
       </header>
+
+      <nav className="page-tabs" aria-label={t('c.pageNav')}>
+        {PAGES.map((id) => (
+          <button
+            key={id}
+            className={`page-tab${page === id ? ' active' : ''}`}
+            aria-pressed={page === id}
+            onClick={() => go(id === 'list' ? 'collection' : `collection/${id}`)}
+          >
+            <PixelIcon name={PAGE_ICON[id]} scale={2} /> {t(`c.page.${id}`)}
+          </button>
+        ))}
+      </nav>
+
+      {page === 'visitors' && <VisitorsPage />}
+      {page === 'decor' && <DecorPage />}
+      {page === 'settings' && <SettingsPage />}
+      {page === 'list' && (
+        <>
 
       <nav className="region-tabs" aria-label={t('c.regionNav')}>
         {tabs.map((t) => (
@@ -138,8 +169,16 @@ export default function Collection() {
                   aria-label={owned ? flowerText(f, 'name') : t('c.unknown')}
                 >
                   {f.nation && <PixelFlag code={f.nation} className="slot-flag" />}
+                  <span className="slot-no">{DEX_NO[f.id]}</span>
+                  {f.season && <span className="slot-season" title={t('c.seasonal')}>❀</span>}
                   {owned && f.rarity === 'legendary' && <Twinkles stars={SLOT_STARS} />}
-                  <PixelPlant flower={f} progress={1} scale={2} silhouette={owned ? null : '#d9cdbf'} />
+                  <PixelPlant
+                    flower={f}
+                    progress={1}
+                    scale={2}
+                    className="slot-plant"
+                    silhouette={owned ? null : '#d9cdbf'}
+                  />
                   <span className="slot-name">{owned ? flowerText(f, 'name') : '???'}</span>
                   {owned && (
                     <span className="slot-stars" style={{ color: RARITY[f.rarity].color }}>
@@ -174,6 +213,8 @@ export default function Collection() {
           )}
         </aside>
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -192,6 +233,7 @@ function FlowerDetail({ flower, entries, lang, onGift }) {
         {/* 작은 글씨: 영어 화면에서는 한국어 원래 이름, 그 밖에는 영어 이름 */}
         {flowerText(flower, 'name')} <small>{lang === 'en' ? flower.name : flower.nameEn}</small>
       </h2>
+      <p className="dex-no">No.{DEX_NO[flower.id]}</p>
       <p className="rarity" style={{ color: rarity.color }}>
         {'★'.repeat(rarity.stars)} {rarity.label}
         {lang === 'en' ? '' : ` · ${t(`rarity.${flower.rarity}`)}`}
@@ -206,6 +248,11 @@ function FlowerDetail({ flower, entries, lang, onGift }) {
         )}
         {flower.nation || origin ? ` · ${regionName(flower.region)}` : ''}
       </p>
+      {flower.season && (
+        <p className="season">
+          ❀ {t('c.seasonRange', { from: seasonDate(flower.season.from), to: seasonDate(flower.season.to) })}
+        </p>
+      )}
       <p className="lang">
         {t('flowerLanguage')} 「{flowerText(flower, 'language')}」
       </p>
@@ -239,3 +286,11 @@ function FlowerDetail({ flower, entries, lang, onGift }) {
   );
 }
 
+
+/** [월, 일] → 지금 언어의 짧은 날짜 */
+function seasonDate([month, day]) {
+  return new Date(2000, month - 1, day).toLocaleDateString(document.documentElement.lang || undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}

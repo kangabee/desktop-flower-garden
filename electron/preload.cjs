@@ -28,4 +28,7 @@ contextBridge.exposeInMainWorld('garden', {
   onNavigate: (handler) => listen('collection:navigate', handler),
   copyText: (text) => ipcRenderer.invoke('clipboard:write-text', text),
   openExternal: (url) => ipcRenderer.send('shell:open-external', url),
+  exportGarden: () => ipcRenderer.invoke('garden:export'),
+  importGarden: () => ipcRenderer.invoke('garden:import'),
+  applyImport: () => ipcRenderer.invoke('garden:import-apply'),
 });

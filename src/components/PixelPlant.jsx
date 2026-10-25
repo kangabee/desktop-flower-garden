@@ -7,15 +7,15 @@ import { SPRITE_H, SPRITE_W, buildPlantGrid } from '../lib/sprites.js';
  * ref.hitTest(clientX, clientY) → 커서 아래가 "색이 있는 픽셀"인지 (클릭 통과 판정용)
  */
 const PixelPlant = forwardRef(function PixelPlant(
-  { flower, progress, sway = 0, scale = 3, className, silhouette = null },
+  { flower, progress, sway = 0, scale = 3, className, silhouette = null, potColors = null },
   ref,
 ) {
   const canvasRef = useRef(null);
   const grid = useMemo(() => {
-    const g = buildPlantGrid(flower, progress, sway);
+    const g = buildPlantGrid(flower, progress, sway, potColors);
     // 도감에서 아직 못 만난 꽃은 실루엣으로
     return silhouette ? g.map((row) => row.map((c) => c && silhouette)) : g;
-  }, [flower, progress, sway, silhouette]);
+  }, [flower, progress, sway, silhouette, potColors]);
 
   useLayoutEffect(() => {
     drawGrid(canvasRef.current.getContext('2d'), grid, scale);

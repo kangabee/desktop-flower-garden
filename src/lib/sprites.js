@@ -78,9 +78,10 @@ export function plantShape(flower, progress) {
  * @param flower  flowers.js 의 꽃 데이터 (씨앗 단계에서는 아무 꽃이나 같은 모습)
  * @param progress 0~1
  * @param sway    -1 | 0 | 1  윗부분 흔들림
+ * @param potColors 화분 꾸미기 색 (data/skins.js) — 화분 글자(R r h p q)만 덮어쓴다
  */
-export function buildPlantGrid(flower, progress, sway = 0) {
-  const colors = { ...BASE_COLORS, ...flower.colors };
+export function buildPlantGrid(flower, progress, sway = 0, potColors = null) {
+  const colors = { ...BASE_COLORS, ...flower.colors, ...potColors };
   const shape = plantShape(flower, progress);
   const plant = createGrid(SPRITE_W, SPRITE_H);
   const topY = STEM_BASE_Y - shape.h + 1;
