@@ -20,9 +20,19 @@ function parseRoute(hash) {
 
 const REGION_KEY = 'dfg.collection.region';
 
-// 도감 순서: 전설 → 희귀 → 흔함, 같은 등급은 추가된 순서. 도감 번호는 추가된 순서라 바뀌지 않는다
+// 도감 순서: 전설 → 희귀 → 흔함, 같은 등급은 추가된 순서.
+// 도감 번호는 등급마다 따로 센다 (L01 · R01 · C01) — 새 꽃은 그 등급의 다음 번호라 기존 번호가 바뀌지 않는다
 const RARITY_ORDER = { legendary: 0, rare: 1, common: 2 };
-const DEX_NO = Object.fromEntries(FLOWERS.map((f, i) => [f.id, String(i + 1).padStart(3, '0')]));
+const RARITY_PREFIX = { legendary: 'L', rare: 'R', common: 'C' };
+const DEX_NO = (() => {
+  const count = {};
+  return Object.fromEntries(
+    FLOWERS.map((f) => {
+      count[f.rarity] = (count[f.rarity] ?? 0) + 1;
+      return [f.id, `${RARITY_PREFIX[f.rarity]}${String(count[f.rarity]).padStart(2, '0')}`];
+    }),
+  );
+})();
 const SORTED = [...FLOWERS].sort((a, b) => RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]);
 
 const PAGES = ['list', 'visitors', 'decor', 'settings'];
